@@ -1,0 +1,12 @@
+node_modules/
+*.log
+*.tgz
+
+!build/
+!types/
+docs/apiref
+
+src/
+npm-shrinkwrap.json
+yarn.lock
+tsconfig.json

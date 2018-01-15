@@ -1,0 +1,15 @@
+# JetBrains files
+.idea
+*.iml
+
+# Node.js files
+logs
+*.log
+npm-debug.log*
+node_modules
+build
+
+src/**/*.js
+.nyc_output
+coverage
+.DS_Store
