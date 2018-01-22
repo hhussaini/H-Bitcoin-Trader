@@ -114,7 +114,7 @@ let close1Hour: number = 0;
 //VERY IMPORTANT LiveOrders are the INITIAL order of each set
 //PlaceOrderMessages are the FOLLOWING in the set that will only occur when the initial liveOrder is done 
 let initialOrder38FiveMin: LiveOrder = null;
-let initialOrder10FiveMin: LiveOrder = null;
+let initialOrder10FiveMin: Array<string> = [];
 let initialOrder100FiveMin: LiveOrder = null;
 
 let followingOrder38FiveMin: PlaceOrderMessage;
@@ -123,7 +123,7 @@ let followingOrder10FiveMin: PlaceOrderMessage;
 
 
 let initialOrder38FifteenMin: LiveOrder = null;
-let initialOrder10FifteenMin: LiveOrder = null;
+let initialOrder10FifteenMin: Array<string> = [];
 let initialOrder100FifteenMin: LiveOrder = null;
 
 let followingOrder38FifteenMin: PlaceOrderMessage;
@@ -155,7 +155,8 @@ let orderDone: OrderDoneMessage;
 
 
 
-let initial10ExecutedBool: boolean = false;
+let initial10ExecutedBool5: boolean = false;
+let initial10ExecutedBool15: boolean = false;
 let cancelled: boolean = false;
 
 
@@ -168,6 +169,13 @@ let fifteenMinuteOrders: Array<string>;
 // let fiveMinuteOrdersMap: { [key:string]: string; } = {};
 // let fifteenMinuteOrdersMap: { [key:string]: string; } = {};
 
+let initial10Triggered5: boolean = false;
+let initial10Triggered15: boolean = false;
+
+let bigCandle5: boolean = false;
+
+
+let initial10TradeSide5: string = "";
 
 
 GTT.Factories.GDAX.FeedFactory(logger, [product]).then((feed: GDAXFeed) => {
@@ -250,13 +258,11 @@ GTT.Factories.GDAX.FeedFactory(logger, [product]).then((feed: GDAXFeed) => {
                     pushMessage('Price Trigger', `FOLLOWING Order to ${followingOrder38FiveMin.side} 0.005 at ${followingOrder38FiveMin.price} placed. Result: ${result.status}`);
                 });
             }
-            else if (tradeExecuted.orderId == initialOrder10FiveMin.id){
-                initial10ExecutedBool = true;
-                gdaxAPI.placeOrder(followingOrder10FiveMin).then((result: LiveOrder) => {
-                    fiveMinuteOrders.push(result.id);
-                    console.log('Order executed', `FOLLOWING Order to ${followingOrder10FiveMin.side} 0.005 at ${followingOrder10FiveMin.price} placed. Result: ${result.status}`);
-                    pushMessage('Price Trigger', `FOLLOWING Order to ${followingOrder10FiveMin.side} 0.005 at ${followingOrder10FiveMin.price} placed. Result: ${result.status}`);
-                });
+            else if (initialOrder10FiveMin.includes(tradeExecuted.orderId)){
+                initialOrder10FiveMin.splice(initialOrder10FiveMin.indexOf(tradeExecuted.orderId), 1);
+                initial10ExecutedBool5 = true;
+                initial10TradeSide5 = tradeExecuted.side;
+                
             }
             else if (tradeExecuted.orderId == initialOrder38FifteenMin.id){
                 gdaxAPI.placeOrder(followingOrder38FifteenMin).then((result: LiveOrder) => {
@@ -265,13 +271,9 @@ GTT.Factories.GDAX.FeedFactory(logger, [product]).then((feed: GDAXFeed) => {
                     pushMessage('Price Trigger', `FOLLOWING Order to ${followingOrder38FifteenMin.side} 0.005 at ${followingOrder38FifteenMin.price} placed. Result: ${result.status}`);
                 });
             }
-            else if (tradeExecuted.orderId == initialOrder10FifteenMin.id){
-                initial10ExecutedBool = true;
-                gdaxAPI.placeOrder(followingOrder10FifteenMin).then((result: LiveOrder) => {
-                    fifteenMinuteOrders.push(result.id);
-                    console.log('Order executed', `FOLLOWING Order to ${followingOrder10FifteenMin.side} 0.005 at ${followingOrder10FifteenMin.price} placed. Result: ${result.status}`);
-                    pushMessage('Price Trigger', `FOLLOWING Order to ${followingOrder10FifteenMin.side} 0.005 at ${followingOrder10FifteenMin.price} placed. Result: ${result.status}`);
-                });
+            else if (initialOrder10FifteenMin.includes(tradeExecuted.orderId)){
+                initial10ExecutedBool15 = true;
+                
             }
             
         }
@@ -317,7 +319,7 @@ function submitTrade(side: string, amount: string, price: string, percentAndMin:
     gdaxAPI.placeOrder(order).then((result: LiveOrder) => {
         
         if (percentAndMin === '10.0 5 Minutes'){
-            initialOrder10FiveMin = result;
+            initialOrder10FiveMin.push(result.id);
             fiveMinuteOrders.push(result.id);
         }
         else if (percentAndMin === '38.2 5 Minutes'){
@@ -329,7 +331,7 @@ function submitTrade(side: string, amount: string, price: string, percentAndMin:
             fiveMinuteOrders.push(result.id);
         }
         else if (percentAndMin === '10.0 15 Minutes'){
-            initialOrder10FifteenMin = result;
+            initialOrder10FifteenMin.push(result.id);
             fifteenMinuteOrders.push(result.id);
         }
         else if (percentAndMin === '38.2 15 Minutes'){
@@ -378,6 +380,16 @@ function checkBook(book: LiveOrderbook){
         }
         close5 = sellingPrice;
 
+        if (initial10Triggered5 == false){
+            initial10Triggered5 = true;
+            let buy105: number = open5 - 75;
+            let sell105: number = open5 + 75;
+            submitTrade('buy', '0.005', buy105.toFixed(2).toString(), '10.0');
+            submitTrade('sell', '0.005', sell105.toFixed(2).toString(), '10.0');
+        }
+
+
+
 
         if (high15 < sellingPrice){   //getting candlestick numbers
             high15 = sellingPrice;     
@@ -390,6 +402,20 @@ function checkBook(book: LiveOrderbook){
             open15Boolean = true;
         }
         close15 = sellingPrice;
+
+        if (initial10Triggered15 == false){
+            initial10Triggered15 = true;
+            let buy1015: number = open15 - 100;
+            let sell1015: number = open15 + 100;
+            submitTrade('buy', '0.005', buy1015.toFixed(2).toString(), '10.0');
+            submitTrade('sell', '0.005', sell1015.toFixed(2).toString(), '10.0');
+            let buy10152: number = open15 - 200;
+            let sell10152: number = open15 + 200;
+            submitTrade('buy', '0.005', buy10152.toFixed(2).toString(), '10.0');
+            submitTrade('sell', '0.005', sell10152.toFixed(2).toString(), '10.0');
+        }
+
+
 
 
         if (high30 < sellingPrice){   //getting candlestick numbers
@@ -437,7 +463,7 @@ function checkBook(book: LiveOrderbook){
     }
     else {
 
-        fiveMinuteTrades(book).then(function() {
+        fiveMinuteTrades(book).then((result: string) => {
             if (Date.now() - global15MinuteCounter > 900000){
                 fifteenMinuteTrades(book);
             }    
@@ -541,7 +567,7 @@ function pushMessage(title: string, msg: string): void {
     });
 }
 
-function fiveMinuteTrades(book: LiveOrderbook) {
+function fiveMinuteTrades(book: LiveOrderbook): Promise<string> {
     
     return new Promise(function (resolve, reject){
         
@@ -550,13 +576,13 @@ function fiveMinuteTrades(book: LiveOrderbook) {
             
     if ((close5 > open5) && ((close5 - open5) > 75)){ //green bar, price went up
 
-        //gdaxAPI.cancelAllOrders(product); // cancelling orders when another large graph is seen
+        bigCandle5 = true;
 
-        for (let l = 0; l < fiveMinuteOrders.length; l++){
-            gdaxAPI.cancelOrder(fiveMinuteOrders[l]);
-        }
-        
         uptrendCalculator('5 Minutes');
+
+        cancelMinuteOrders(fiveMinuteOrders).then((result: string) => {
+        
+        
 
         //3 cases, 
         //1. goes down then back up
@@ -584,9 +610,7 @@ function fiveMinuteTrades(book: LiveOrderbook) {
 
 
 
-        //this is special stop order needed to get rightvalue at first
         
-        pushMessage('INITIAL SELL 10.0% ORDER', `Going to submit limit sell at $${stopOrderPrice.toFixed(2).toString()}`); //if it goes down straight
         pushMessage('FOLLOWING BUY 10.0% ORDER', `Going to submit limit buy at $${ret5FiveMin}`); //buy
 
         
@@ -617,19 +641,21 @@ function fiveMinuteTrades(book: LiveOrderbook) {
         console.log('BUY ORDER 10.0', `Going to submit limit buy at $${ret5FiveMin}`); //buy
         console.log('SELL ORDER 100', `Going to submit limit sell at $${ext5FiveMin}`); //if it goes up only
 
-        
+    });    
         
     }
 
     else if ((open5 > close5) && ((open5 - close5) > 75)){ //red bar, price went down
 
-        //gdaxAPI.cancelAllOrders(product); // cancelling orders when another large graph is seen
-
-        for (let l = 0; l < fiveMinuteOrders.length; l++){
-            gdaxAPI.cancelOrder(fiveMinuteOrders[l]);
-        }
+        bigCandle5 = true;
 
         downtrendCalculator('5 Minutes');
+
+        cancelMinuteOrders(fiveMinuteOrders).then((result: string) => {
+
+        
+
+        
 
         //3 cases, 
         //1. goes up then back down
@@ -658,7 +684,6 @@ function fiveMinuteTrades(book: LiveOrderbook) {
 
 
        
-        pushMessage('INITIAL BUY 10.0% ORDER', `Going to submit limit buy at $${stopOrderPrice.toFixed(2).toString()}`); //if it goes up straight
         pushMessage('FOLLOWING SELL 10.0% ORDER', `Going to submit limit sell at $${ret5FiveMin}`); //sell
         
         followingOrder10FiveMin = {
@@ -691,13 +716,42 @@ function fiveMinuteTrades(book: LiveOrderbook) {
         console.log('BUY ORDER 100', `Going to submit limit sell at $${ext5FiveMin}`); //if it goes down only
 
 
-        
+    });      
     
+    }
+
+    if (bigCandle5 == false && initial10ExecutedBool5 == true){
+        initial10ExecutedBool5 = false;
+        if (initial10TradeSide5 === 'buy'){
+            submitTrade('sell', '0.005', open5.toFixed(2).toString(), 'following 10 not big candle');
+        }
+        else if (initial10TradeSide5 === 'sell'){
+            submitTrade('buy', '0.005', open5.toFixed(2).toString(), 'following 10 not big candle');
+        }
+    }
+
+    
+    
+    if (bigCandle5 == false){
+        for (let i: number = 0; i < initialOrder10FiveMin.length; i++){
+            gdaxAPI.cancelOrder(initialOrder10FiveMin[i]).then((res: string) => {
+                if (i == initialOrder10FiveMin.length-1){
+                    initial10Triggered5 = false;
+                    initialOrder10FiveMin = [];
+                    initial10ExecutedBool5 = false;
+                }
+               
+            });
+        }
+    }
+    else{
+        initialOrder10FiveMin = [];
+        initial10ExecutedBool5 = false;
     }
 
     global5MinuteCounter = Date.now();
     open5Boolean = false;
-    
+    bigCandle5 = false;
 
     pushMessage('Price Trigger', `OPEN 5 MINS: ${open5} \n HIGH 5 MINS: ${high5} \n LOW 5 MINS: ${low5} \n CLOSE 5 MINS: ${close5}`);
     console.log('Price Trigger', `OPEN 5 MINS: ${open5} \n HIGH 5 MINS: ${high5} \n LOW 5 MINS: ${low5} \n CLOSE 5 MINS: ${close5}`);
@@ -875,4 +929,19 @@ function fifteenMinuteTrades(book: LiveOrderbook) {
     
     
 
+}
+
+
+
+function cancelMinuteOrders(minuteOrders: Array<string>): Promise<string> {
+
+    return new Promise(function (resolve, reject){
+
+    for (let l = 0; l < minuteOrders.length; l++){
+        gdaxAPI.cancelOrder(minuteOrders[l]);
+    }
+
+    resolve("Resolved cancel minute orders"); //if the action succeeded
+    reject("Errored out cancel minute orders"); //if the action did not succeed
+    });
 }

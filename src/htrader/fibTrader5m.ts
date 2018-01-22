@@ -184,8 +184,8 @@ GTT.Factories.GDAX.FeedFactory(logger, [product]).then((feed: GDAXFeed) => {
             if (initialOrder38 != null){
                 if (tradeExecuted.orderId == initialOrder38.id){
                     gdaxAPI.placeOrder(followingOrder38).then((result: LiveOrder) => {
-                        console.log('Order executed', `FOLLOWING Order to ${followingOrder38.side} 0.005 at ${followingOrder38.price} placed. Result: ${result.status}`);
-                        pushMessage('Price Trigger', `FOLLOWING Order to ${followingOrder38.side} 0.005 at ${followingOrder38.price} placed. Result: ${result.status}`);
+                        console.log('Order executed', `FOLLOWING Order 38 to ${followingOrder38.side} 0.005 at ${followingOrder38.price} placed. Result: ${result.status}`);
+                        pushMessage('Price Trigger', `FOLLOWING Order 38 to ${followingOrder38.side} 0.005 at ${followingOrder38.price} placed. Result: ${result.status}`);
                     });
                 }
             }
@@ -246,8 +246,8 @@ function submitTrade(side: string, amount: string, price: string, percent: strin
             initialOrder10.push(result.id);
         }
 
-        console.log('Order executed', `INITIAL Order to ${order.side} 0.005 placed. Result: ID OF ${percent} is ${result.id} ${result.status}`);
-        pushMessage('Price Trigger', `INITIAL Order to ${order.side} 0.005 placed. Result: ID OF ${percent} is ${result.id} ${result.status}`);
+        console.log('Order executed', `INITIAL Order to ${order.side} ${price} 0.005 placed. Result: ID OF ${percent} is ${result.id} ${result.status}`);
+        pushMessage('Price Trigger', `INITIAL Order to ${order.side} ${price} 0.005 placed. Result: ID OF ${percent} is ${result.id} ${result.status}`);
     });
 
     
@@ -294,10 +294,10 @@ function checkBook(book: LiveOrderbook){
 
         if (initial10Triggered == false){
             initial10Triggered = true;
-            let buy10: number = open - 20;
-            let sell10: number = open + 20;
-            submitTrade('buy', '0.001', buy10.toFixed(2).toString(), '10.0');
-            submitTrade('sell', '0.001', sell10.toFixed(2).toString(), '10.0');
+            let buy10: number = open - 75;
+            let sell10: number = open + 75;
+            submitTrade('buy', '0.005', buy10.toFixed(2).toString(), '10.0');
+            submitTrade('sell', '0.005', sell10.toFixed(2).toString(), '10.0');
         }
 
     
@@ -311,6 +311,7 @@ function checkBook(book: LiveOrderbook){
             if (buyingPrice>1)ratio = ratio+1;{}
             tradeFinalized = null;
             cancelled = true;
+            followingOrder10 = null;
             logger.log('info', `Cumulative trade volume: ${tradeVolume.toFixed(4)}`);
             checkBook(book);
 
@@ -325,30 +326,10 @@ function checkBook(book: LiveOrderbook){
       
 
 
-        if ((close > open) && ((close - open) > 20)){ //green bar, price went up
+        if ((close > open) && ((close - open) > 75)){ //green bar, price went up
 
             bigCandle = true;
             uptrendCalculator(high, low, close);
-
-            pushMessage('FOLLOWING BUY 10.0% ORDER', `Going to submit limit buy at $${ret5}`); //buy
-            
-                        
-                followingOrder10 = {
-                    type: 'placeOrder',
-                    time: new Date(),
-                    productId: product,
-                    orderType: 'limit',
-                    side: 'buy',
-                    size: '0.001',
-                    price: ret5.toFixed(2).toString()
-                };
-    
-                if (initial10ExecutedBool == true){
-                    gdaxAPI.placeOrder(followingOrder10).then((result: LiveOrder) => {
-                        console.log('Order executed', `FOLLOWING Order to ${followingOrder10.side} 0.005 at ${followingOrder10.price} placed. Result: ${result.status}`);
-                        pushMessage('Price Trigger', `FOLLOWING Order to ${followingOrder10.side} 0.005 at ${followingOrder10.price} placed. Result: ${result.status}`);
-                    });
-                }
 
             gdaxAPI.cancelAllOrders(product).then((result: string[]) => {
                 
@@ -369,7 +350,7 @@ function checkBook(book: LiveOrderbook){
             pushMessage('INITIAL BUY 38.2% ORDER', `Going to submit limit buy at $${ret2}`); //buy order need to buy before sell otherwise dont sell
             pushMessage('FOLLOWING SELL 38.2% ORDER', `Going to submit limit sell at $${close}`); //sell order
             
-            submitTrade('buy', '0.001', ret2.toFixed(2).toString(), '38.2');
+            submitTrade('buy', '0.005', ret2.toFixed(2).toString(), '38.2');
             
             followingOrder38 = {
                 type: 'placeOrder',
@@ -383,8 +364,9 @@ function checkBook(book: LiveOrderbook){
 
 
 
-            // pushMessage('FOLLOWING BUY 10.0% ORDER', `Going to submit limit buy at $${ret5}`); //buy
+            pushMessage('FOLLOWING BUY 10.0% ORDER', `Going to submit limit buy at $${ret5}`); //buy
 
+            submitTrade('buy', '0.005', ret5.toFixed(2).toString(), 'following 10');
             
             // followingOrder10 = {
             //     type: 'placeOrder',
@@ -392,23 +374,23 @@ function checkBook(book: LiveOrderbook){
             //     productId: product,
             //     orderType: 'limit',
             //     side: 'buy',
-            //     size: '0.001',
+            //     size: '0.002',
             //     price: ret5.toFixed(2).toString()
             // };
 
-            // if (initial10ExecutedBool == true){
-            //     gdaxAPI.placeOrder(followingOrder10).then((result: LiveOrder) => {
-            //         console.log('Order executed', `FOLLOWING Order to ${followingOrder10.side} 0.005 at ${followingOrder10.price} placed. Result: ${result.status}`);
-            //         pushMessage('Price Trigger', `FOLLOWING Order to ${followingOrder10.side} 0.005 at ${followingOrder10.price} placed. Result: ${result.status}`);
-            //     });
-            // }
+            
+            // gdaxAPI.placeOrder(followingOrder10).then((result: LiveOrder) => {
+            //     console.log('Order executed', `FOLLOWING Order to ${followingOrder10.side} 0.005 at ${followingOrder10.price} placed. Result: ${result.status}`);
+            //     pushMessage('Price Trigger', `FOLLOWING Order to ${followingOrder10.side} 0.005 at ${followingOrder10.price} placed. Result: ${result.status}`);
+            // });
+            
 
 
 
             //this is extension 100% - incase a big jump
             pushMessage('SELL 100% ORDER', `Going to submit limit sell at $${ext5}`); //if it goes up only
             
-            submitTrade('sell', '0.001', ext5.toFixed(2).toString(), '100');
+            submitTrade('sell', '0.005', ext5.toFixed(2).toString(), '100');
 
 
 
@@ -416,38 +398,22 @@ function checkBook(book: LiveOrderbook){
 
             console.log('INITIAL BUY ORDER 38.2', `Going to submit limit buy at $${ret2}`); //buy order need to buy before sell otherwise dont sell
             console.log('FOLLOWING SELL ORDER 38.2', `Going to submit limit sell at $${close}`); //sell order
-            console.log('INITIAL SELL ORDER 10.0', `Going to submit limit sell at $${open+20}`); //if it goes up slightly then goes down
+            console.log('INITIAL SELL ORDER 10.0', `Going to submit limit sell at $${open+75}`); //if it goes up slightly then goes down
             console.log('FOLLOWING BUY ORDER 10.0', `Going to submit limit buy at $${ret5}`); //buy
             console.log('INITIAL SELL ORDER 100', `Going to submit limit sell at $${ext5}`); //if it goes up only
+
+
+            initial10Triggered = false;
 
         });
          
         }
 
-        else if ((open > close) && ((open - close) > 20)){ //red bar, price went down
+        else if ((open > close) && ((open - close) > 75)){ //red bar, price went down
 
             bigCandle = true;
 
             downtrendCalculator(high, low, close);
-
-            pushMessage('FOLLOWING SELL 10.0% ORDER', `Going to submit limit sell at $${ret5}`); //sell
-            
-            followingOrder10 = {
-                type: 'placeOrder',
-                time: new Date(),
-                productId: product,
-                orderType: 'limit',
-                side: 'sell',
-                size: '0.001',
-                price: ret5.toFixed(2).toString()
-            };
-
-            if (initial10ExecutedBool == true){
-                gdaxAPI.placeOrder(followingOrder10).then((result: LiveOrder) => {
-                    console.log('Order executed', `FOLLOWING Order to ${followingOrder10.side} 0.005 at ${followingOrder10.price} placed. Result: ${result.status}`);
-                    pushMessage('Price Trigger', `FOLLOWING Order to ${followingOrder10.side} 0.005 at ${followingOrder10.price} placed. Result: ${result.status}`);
-                });
-            }
             
             gdaxAPI.cancelAllOrders(product).then((result: string[]) => {
                 
@@ -468,7 +434,7 @@ function checkBook(book: LiveOrderbook){
             pushMessage('INITIAL SELL 38.2% ORDER', `Going to submit limit sell at $${ret2}`); //sell order need to sell before buy otherwise dont buy
             pushMessage('FOLLOWING BUY 38.2% ORDER', `Going to submit limit buy at $${close}`); //buy order
 
-            submitTrade('sell', '0.001', ret2.toFixed(2).toString(), '38.2');
+            submitTrade('sell', '0.005', ret2.toFixed(2).toString(), '38.2');
             
             followingOrder38 = {
                 type: 'placeOrder',
@@ -476,13 +442,15 @@ function checkBook(book: LiveOrderbook){
                 productId: product,
                 orderType: 'limit',
                 side: 'buy',
-                size: '0.001',
+                size: '0.005',
                 price: close.toFixed(2).toString()
             };
 
 
 
-            // pushMessage('FOLLOWING SELL 10.0% ORDER', `Going to submit limit sell at $${ret5}`); //sell
+            pushMessage('FOLLOWING SELL 10.0% ORDER', `Going to submit limit sell at $${ret5}`); //sell
+
+            submitTrade('sell', '0.005', ret5.toFixed(2).toString(), 'following 10');
             
             // followingOrder10 = {
             //     type: 'placeOrder',
@@ -490,22 +458,22 @@ function checkBook(book: LiveOrderbook){
             //     productId: product,
             //     orderType: 'limit',
             //     side: 'sell',
-            //     size: '0.001',
+            //     size: '0.002',
             //     price: ret5.toFixed(2).toString()
             // };
 
-            // if (initial10ExecutedBool == true){
-            //     gdaxAPI.placeOrder(followingOrder10).then((result: LiveOrder) => {
-            //         console.log('Order executed', `FOLLOWING Order to ${followingOrder10.side} 0.005 at ${followingOrder10.price} placed. Result: ${result.status}`);
-            //         pushMessage('Price Trigger', `FOLLOWING Order to ${followingOrder10.side} 0.005 at ${followingOrder10.price} placed. Result: ${result.status}`);
-            //     });
-            // }
+            
+            // gdaxAPI.placeOrder(followingOrder10).then((result: LiveOrder) => {
+            //     console.log('Order executed', `FOLLOWING Order to ${followingOrder10.side} 0.005 at ${followingOrder10.price} placed. Result: ${result.status}`);
+            //     pushMessage('Price Trigger', `FOLLOWING Order to ${followingOrder10.side} 0.005 at ${followingOrder10.price} placed. Result: ${result.status}`);
+            // });
+            
 
 
             //this is extension 100% - incase a big jump
             pushMessage('BUY 100% ORDER', `Going to submit limit buy at $${ext5}`); //if it goes down only
 
-            submitTrade('buy', '0.001', ext5.toFixed(2).toString(), '100');
+            submitTrade('buy', '0.005', ext5.toFixed(2).toString(), '100');
 
 
 
@@ -514,9 +482,13 @@ function checkBook(book: LiveOrderbook){
             //Print Statements 
             console.log('INITIAL SELL ORDER 38.2', `Going to submit limit sell at $${ret2}`); //sell order need to sell before buy otherwise dont buy
             console.log('FOLLOWING BUY ORDER 38.2', `Going to submit limit buy at $${close}`); //buy order
-            console.log('INITIAL BUY ORDER 10.0', `Going to submit limit sell at $${open-20}`); //if it goes down slightly then goes up
+            console.log('INITIAL BUY ORDER 10.0', `Going to submit limit sell at $${open-75}`); //if it goes down slightly then goes up
             console.log('FOLLOWING SELL ORDER 10.0', `Going to submit limit buy at $${ret5}`); //buy     
             console.log('INITIAL BUY ORDER 100', `Going to submit limit sell at $${ext5}`); //if it goes down only
+
+
+
+            initial10Triggered = false;
 
 
         });
@@ -526,10 +498,10 @@ function checkBook(book: LiveOrderbook){
         if (bigCandle == false && initial10ExecutedBool == true){
             initial10ExecutedBool = false;
             if (initial10TradeSide === 'buy'){
-                submitTrade('sell', '0.001', open.toFixed(2).toString(), 'none');
+                submitTrade('sell', '0.005', open.toFixed(2).toString(), 'following 10 not big candle');
             }
             else if (initial10TradeSide === 'sell'){
-                submitTrade('buy', '0.001', open.toFixed(2).toString(), 'none');
+                submitTrade('buy', '0.005', open.toFixed(2).toString(), 'following 10 not big candle');
             }
         }
 
@@ -548,7 +520,6 @@ function checkBook(book: LiveOrderbook){
             }
         }
         else{
-            initial10Triggered = false;
             initialOrder10 = [];
             initial10ExecutedBool = false;
         }
@@ -582,7 +553,7 @@ function uptrendCalculator(high: number, low: number, close: number) {
     let difference = high - low;
 
     ret1 = high - (difference * 0.10); //using this for straight down , CUSTOM MADE-- NOT USING ANYMORE, FILLED AUTOMATICALLY
-    ret2 = high - (difference * 0.382); //using this one for down then up
+    ret2 = (open+close)/2;  // changed to half, custom made //using this one for down then up
     ret3 = high - (difference * 0.5);
     ret4 = high - (difference * 0.618);
     ret5 = high - (difference * 0.90); //CUSTOM MADE
@@ -609,7 +580,7 @@ function downtrendCalculator(high: number, low: number, close: number) {
     let difference = high - low;
 
     ret1 = low + (difference * 0.10); //using this for straight up , CUSTOM MADE-- NOT USING ANYMORE, FILLED AUTOMATICALLY
-    ret2 = low + (difference * 0.382); //using this one for up then down
+    ret2 = (open+close)/2;  // changed to half, custom made low + (difference * 0.382); //using this one for up then down
     ret3 = low + (difference * 0.5);
     ret4 = low + (difference * 0.618);
     ret5 = low + (difference * 0.90); //CUSTOM MADE 
