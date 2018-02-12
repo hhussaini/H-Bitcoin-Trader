@@ -176,6 +176,27 @@ let bigCandle15: boolean = false;
 let initial10TradeSide5: string = "";
 let initial10TradeSide15: string = "";
 
+let fiveMinuteOrdersKeep: Array<string> = [];
+let fifteenMinuteOrdersKeep: Array<string> = [];
+
+let initialOrderFiveMinKeep: Array<string> = [];
+let initialOrderFifteenMinKeep: Array<string> = [];
+
+let fiveMinKeep: boolean = false;
+let fifteenMinKeep: boolean = false;
+
+let initialOrder38FiveMinKeep: LiveOrder = null;
+let followingOrder38FiveMinKeep: PlaceOrderMessage;
+
+let initialOrder38FifteenMinKeep: LiveOrder = null;
+let followingOrder38FifteenMinKeep: PlaceOrderMessage;
+
+let fiveMinuteInitialTradeCounter: number = 0;
+let fifteenMinuteInitialTradeCounter: number = 0;
+
+//let fiveMinuteAmountToTrade: number = 0;
+//let fifteenMinuteAmountToTrade: number = 0;
+
 GTT.Factories.GDAX.FeedFactory(logger, [product]).then((feed: GDAXFeed) => {
 // Configure the live book object
 
@@ -254,6 +275,13 @@ GTT.Factories.GDAX.FeedFactory(logger, [product]).then((feed: GDAXFeed) => {
                 fifteenMinuteOrders.splice(fifteenMinuteOrders.indexOf(tradeExecuted.orderId), 1);
             }
 
+            if (fiveMinuteOrdersKeep.includes(tradeExecuted.orderId)){
+                fiveMinuteOrdersKeep.splice(fiveMinuteOrdersKeep.indexOf(tradeExecuted.orderId), 1);
+            }
+            if (fifteenMinuteOrdersKeep.includes(tradeExecuted.orderId)){
+                fifteenMinuteOrdersKeep.splice(fifteenMinuteOrdersKeep.indexOf(tradeExecuted.orderId), 1);
+            }
+
             if (initialOrder38FiveMin != null){
                 if (tradeExecuted.orderId == initialOrder38FiveMin.id){
                     console.log(`Initial Order 38 5 Minutes to ${tradeExecuted.side} at ${initialOrder38FiveMin.price} was completed`);
@@ -269,7 +297,24 @@ GTT.Factories.GDAX.FeedFactory(logger, [product]).then((feed: GDAXFeed) => {
                 initialOrder10FiveMin.splice(initialOrder10FiveMin.indexOf(tradeExecuted.orderId), 1);
                 initial10ExecutedBool5 = true;
                 initial10TradeSide5 = tradeExecuted.side;
+                if (initialOrderFiveMinKeep.includes(tradeExecuted.orderId)){
+                    fiveMinKeep = true;
+                }
+                fiveMinuteInitialTradeCounter++;
+                console.log("COUNTER" + fiveMinuteInitialTradeCounter);
             }
+            if (initialOrder38FiveMinKeep != null){
+                if (tradeExecuted.orderId == initialOrder38FiveMinKeep.id){
+                    console.log(`Initial Order 38 5 Minutes Keep to ${tradeExecuted.side} at ${initialOrder38FiveMinKeep.price} was completed`);
+                    gdaxAPI.placeOrder(followingOrder38FiveMinKeep).then((result: LiveOrder) => {
+                        fiveMinuteOrdersKeep.push(result.id);
+                        console.log('Order executed', `FOLLOWING Order to ${followingOrder38FiveMinKeep.side} 0.005 at ${followingOrder38FiveMinKeep.price} placed. Result: ${result.status}`);
+                        pushMessage('Price Trigger', `FOLLOWING Order to ${followingOrder38FiveMinKeep.side} 0.005 at ${followingOrder38FiveMinKeep.price} placed. Result: ${result.status}`);
+                    });
+                }
+            }
+
+            
             if (initialOrder38FifteenMin != null){
                 if (tradeExecuted.orderId == initialOrder38FifteenMin.id){
                     console.log(`Initial Order 38 15 Minutes to ${tradeExecuted.side} at ${initialOrder38FifteenMin.price} was completed`);
@@ -285,7 +330,22 @@ GTT.Factories.GDAX.FeedFactory(logger, [product]).then((feed: GDAXFeed) => {
                 initialOrder10FifteenMin.splice(initialOrder10FifteenMin.indexOf(tradeExecuted.orderId), 1);
                 initial10ExecutedBool15 = true;
                 initial10TradeSide15 = tradeExecuted.side;
+                if (initialOrderFifteenMinKeep.includes(tradeExecuted.orderId)){
+                    fifteenMinKeep = true;
+                }
+                fifteenMinuteInitialTradeCounter++;
             }
+            if (initialOrder38FifteenMinKeep != null){
+                if (tradeExecuted.orderId == initialOrder38FifteenMinKeep.id){
+                    console.log(`Initial Order 38 15 Minutes Keep to ${tradeExecuted.side} at ${initialOrder38FifteenMinKeep.price} was completed`);
+                    gdaxAPI.placeOrder(followingOrder38FifteenMinKeep).then((result: LiveOrder) => {
+                        fifteenMinuteOrdersKeep.push(result.id);
+                        console.log('Order executed', `FOLLOWING Order to ${followingOrder38FifteenMinKeep.side} 0.005 at ${followingOrder38FifteenMinKeep.price} placed. Result: ${result.status}`);
+                        pushMessage('Price Trigger', `FOLLOWING Order to ${followingOrder38FifteenMinKeep.side} 0.005 at ${followingOrder38FifteenMinKeep.price} placed. Result: ${result.status}`);
+                    });
+                }
+            }
+
             
         }
     
@@ -334,31 +394,70 @@ function submitTrade(side: string, amount: string, price: string, percentAndMin:
             fiveMinuteOrders.push(result.id);
         }
         else if (percentAndMin === '38.2 5 Minutes'){
-            initialOrder38FiveMin = result;
-            fiveMinuteOrders.push(result.id);
+            if (fiveMinKeep == true){
+                initialOrder38FiveMinKeep = result;
+                fiveMinuteOrdersKeep.push(result.id);
+            }
+            else{
+                initialOrder38FiveMin = result;
+                fiveMinuteOrders.push(result.id);
+            }
         }
         else if (percentAndMin === '100 5 Minutes'){
-            initialOrder100FiveMin = result;
-            fiveMinuteOrders.push(result.id);
+            if (fiveMinKeep == true){
+                fiveMinuteOrdersKeep.push(result.id);
+            }
+            else{
+                initialOrder100FiveMin = result;
+                fiveMinuteOrders.push(result.id);
+            }
         }
         else if (percentAndMin === 'Following Order 10.0 5 Minutes'){
             fiveMinuteOrders.push(result.id);
         }
+        else if (percentAndMin === '10.0 5 Minutes Keep'){
+            fiveMinuteOrders.push(result.id);
+            initialOrder10FiveMin.push(result.id);
+            initialOrderFiveMinKeep.push(result.id);
+        }
+
+
         else if (percentAndMin === '10.0 15 Minutes'){
             initialOrder10FifteenMin.push(result.id);
             fifteenMinuteOrders.push(result.id);
         }
         else if (percentAndMin === '38.2 15 Minutes'){
-            initialOrder38FifteenMin = result;
-            fifteenMinuteOrders.push(result.id);
+            if (fifteenMinKeep == true){
+                initialOrder38FifteenMinKeep = result;
+                fifteenMinuteOrdersKeep.push(result.id);
+            }
+            else{
+                initialOrder38FifteenMin = result;
+                fifteenMinuteOrders.push(result.id);
+            }
+            
         }
         else if (percentAndMin === '100 15 Minutes'){
-            initialOrder100FifteenMin = result;
-            fifteenMinuteOrders.push(result.id);
+            if (fifteenMinKeep == true){
+                initialOrder100FifteenMin = result;
+                fifteenMinuteOrdersKeep.push(result.id);
+            }
+            else{
+                initialOrder100FifteenMin = result;
+                fifteenMinuteOrders.push(result.id);
+            }
+            
         }
         else if (percentAndMin === 'Following Order 10.0 15 Minutes'){
             fifteenMinuteOrders.push(result.id);
         }
+        else if (percentAndMin === '10.0 15 Minutes Keep'){
+            fifteenMinuteOrders.push(result.id);
+            initialOrder10FifteenMin.push(result.id);
+            initialOrderFifteenMinKeep.push(result.id);
+        }
+
+
         console.log('Order executed', `INITIAL Order to ${order.side} 0.005 placed. Result: ID OF ${percentAndMin} is ${result.id} ${result.status}`);
         pushMessage('Price Trigger', `INITIAL Order to ${order.side} 0.005 placed. Result: ID OF ${percentAndMin} is ${result.id} ${result.status}`);
     });
@@ -399,10 +498,96 @@ function checkBook(book: LiveOrderbook){
 
         if (initial10Triggered5 == false){
             initial10Triggered5 = true;
-            let buy105: number = open5 - 10;
-            let sell105: number = open5 + 10;
-            submitTrade('buy', '0.001', buy105.toFixed(2).toString(), '10.0 5 Minutes');
-            submitTrade('sell', '0.001', sell105.toFixed(2).toString(), '10.0 5 Minutes');
+
+            // let start = new Date();
+            // start.setHours(start.getHours() - 5);
+            
+            // let end = new Date();
+            
+            //start.setTime( start.getTime() - 300*60*1000 );
+            //end.setTime( end.getTime() - 300*60*1000 );
+
+
+            // let isoStart = start.toISOString();
+            // let isoEnd = end.toISOString();
+
+            // let isoStart = start.toISOString().slice(0, -1);
+            // let isoEnd = end.toISOString().slice(0, -1);
+            // isoStart = isoStart.concat('-05:00');
+            // isoEnd = isoEnd.concat('-05:00');
+            //isoStart = '2018-02-11T17:26:58.696Z';
+            //isoEnd = '2018-02-11T22:26:58.697Z';
+            //let isoStart = start.toUTCString();
+            //let isoEnd = end.toUTCString();
+            // console.log("start " + isoStart);
+            // console.log("end " + isoEnd);
+
+            let options = {
+                granularity: '300'
+            };
+            gdaxAPI.loadHistoricRates(options).then((res: Array<Array<string>>) => {
+                console.log(res);
+                console.log("LEN: " + res.length);
+                //console.log("res:" + res[349][0]);
+                let numArray = new Array(31).fill(0);
+                let average = 0;
+                let averageCounter = 0;
+                for (let i = 0; i < 121; i++){ //hardcoded for 5 hours. 12 * amount of hours to look at 
+                    let open = Number(res[i][3]);
+                    let close = Number(res[i][4]);
+                    console.log("VAL: " + Math.abs(open - close));
+                    if (Math.abs(open - close) > 40){
+                        average += Math.abs(open - close);
+                        averageCounter++;
+                        console.log("AVG: " + average);
+                        if (Math.abs(open - close) < 100){
+                            let tens = Math.floor((Math.abs(open - close)/10) % 10);
+                            numArray[tens]++;
+                        }
+                        else if (Math.abs(open - close) >= 100){
+                            let hundreds = Math.floor((Math.abs(open - close)/10));
+                            numArray[hundreds]++;
+                        }
+
+                    }
+                  
+                }
+                let finalAverage = average/averageCounter;
+                console.log("FINAL AVERAGE: " + finalAverage);
+
+                let newAverage = 0;
+                let newCounter = 0;
+
+                let newAverage2 = 0;
+                let newCounter2 = 0;
+                for (let j = 0; j < numArray.length; j++){
+                    console.log("FILLED ARRAY: VAL: " + j*10 + " AND AMOUNT: " + numArray[j]);
+                    if (numArray[j] > 0){
+                        newAverage += (numArray[j] * (j*10));
+                        newCounter += numArray[j];
+                        console.log("NEW AVERAGE: " + newAverage/newCounter);
+
+
+                        newAverage2 += numArray[j] * (j*10) + ((j/25) * (numArray[j] * (j*10)));
+                        newCounter2 += numArray[j];
+                        console.log("NEW AVERAGE 2: " + newAverage2/newCounter2);
+                    }
+                }
+                
+            });
+
+            // let buy10Five: number = open5 - 75;
+            // let sell10Five: number = open5 + 75;
+            // submitTrade('buy', '0.001', buy10Five.toFixed(2).toString(), '10.0 5 Minutes');
+            // submitTrade('sell', '0.001', sell10Five.toFixed(2).toString(), '10.0 5 Minutes');
+            // buy10Five = open5 - 100;
+            // sell10Five = open5 + 100;
+            // submitTrade('buy', '0.001', buy10Five.toFixed(2).toString(), '10.0 5 Minutes');
+            // submitTrade('sell', '0.001', sell10Five.toFixed(2).toString(), '10.0 5 Minutes');
+            // buy10Five = open5 - 150;
+            // sell10Five = open5 + 150;
+            // submitTrade('buy', '0.001', buy10Five.toFixed(2).toString(), '10.0 5 Minutes Keep');
+            // submitTrade('sell', '0.001', sell10Five.toFixed(2).toString(), '10.0 5 Minutes Keep');
         }
 
 
@@ -422,14 +607,19 @@ function checkBook(book: LiveOrderbook){
 
         if (initial10Triggered15 == false){
             initial10Triggered15 = true;
-            let buy1015: number = open15 - 15;
-            let sell1015: number = open15 + 15;
-            submitTrade('buy', '0.001', buy1015.toFixed(2).toString(), '10.0 15 Minutes');
-            submitTrade('sell', '0.001', sell1015.toFixed(2).toString(), '10.0 15 Minutes');
-            // let buy10152: number = open15 - 200;
-            // let sell10152: number = open15 + 200;
-            // submitTrade('buy', '0.005', buy10152.toFixed(2).toString(), '10.0');
-            // submitTrade('sell', '0.005', sell10152.toFixed(2).toString(), '10.0');
+            // let buy10Fifteen: number = open15 - 100;
+            // let sell10Fifteen: number = open15 + 100;
+            // submitTrade('buy', '0.001', buy10Fifteen.toFixed(2).toString(), '10.0 15 Minutes');
+            // submitTrade('sell', '0.001', sell10Fifteen.toFixed(2).toString(), '10.0 15 Minutes');
+            // buy10Fifteen = open15 - 125;
+            // sell10Fifteen = open15 + 125;
+            // submitTrade('buy', '0.001', buy10Fifteen.toFixed(2).toString(), '10.0 15 Minutes');
+            // submitTrade('sell', '0.001', sell10Fifteen.toFixed(2).toString(), '10.0 15 Minutes');
+            // buy10Fifteen = open15 - 150;
+            // sell10Fifteen = open15 + 150;
+            // submitTrade('buy', '0.001', buy10Fifteen.toFixed(2).toString(), '10.0 15 Minutes Keep');
+            // submitTrade('sell', '0.001', sell10Fifteen.toFixed(2).toString(), '10.0 15 Minutes Keep');
+            
         }
 
 
@@ -480,12 +670,32 @@ function checkBook(book: LiveOrderbook){
     }
     else {
 
+        // fiveMinuteTrades(book).then((result: string) => {
+        //     console.log("RESULT OF FIVE MIN TRADES: " + result);
+        //     if (Date.now() - global15MinuteCounter > 900000){
+        //         setTimeout(fifteenMinuteTrades, 2000, book);
+        //         //setTimeout(function(){ fifteenMinuteTrades(book) },10000);
+        //     }    
+        // });
+
         fiveMinuteTrades(book).then((result: string) => {
-            console.log("RESULT OF FIVE MIN TRADES: " + result);
+            console.log("RESULT OF FIVE MIN TRADES: " + result); 
+            fiveMinuteInitialTradeCounter = 0;
+             
+        }).then(function() {
+            return promiseTimeout(2000);
+        }).then(function() {
             if (Date.now() - global15MinuteCounter > 900000){
-                setTimeout(fifteenMinuteTrades, 3000, book);
-                //setTimeout(function(){ fifteenMinuteTrades(book) },10000);
-            }    
+                fifteenMinuteTrades(book).then((result: string) => {
+                    console.log("RESULT OF FIFTEEN MIN TRADES: " + result);
+                    fifteenMinuteInitialTradeCounter = 0;    
+                });
+            } 
+        }).then(function() {
+            return promiseTimeout(2000);
+        }).then(function() {
+            console.log("MADE IT AFTER 15 WITH NO ERRORS");
+            
         });
 
         
@@ -514,21 +724,26 @@ function checkBook(book: LiveOrderbook){
     
 }
 
+function promiseTimeout(time: number) {
+    return new Promise(function(resolve,reject){
+        setTimeout(function(){resolve(time);},time);
+    });
+};
 
 
 function uptrendCalculator(time: string) {
     
     
     if (time === '5 Minutes'){ 
-        difference5Min = high5 - low5;
-        ret2FiveMin = (open5+close5)/2; //using this one for down then up
-        ret5FiveMin = high5 - (difference5Min * 0.90); //CUSTOM MADE
+        difference5Min = close5 - open5;
+        ret2FiveMin = close5 - (difference5Min * 0.382); //using this one for down then up
+        ret5FiveMin = close5 - (difference5Min * 0.90); //CUSTOM MADE
         ext5FiveMin = close5 + (difference5Min * 1);    //using this for hail mary straight up 
     }
     else if (time === '15 Minutes'){ 
-        difference15Min = high15 - low15;
-        ret2FifteenMin = (open15+close15)/2; //using this one for down then up
-        ret5FifteenMin = high15 - (difference15Min * 0.90); //CUSTOM MADE
+        difference15Min = close15 - open15;
+        ret2FifteenMin = close5 - (difference15Min * 0.382); //using this one for down then up
+        ret5FifteenMin = close15 - (difference15Min * 0.90); //CUSTOM MADE
         ext5FifteenMin = close15 + (difference15Min * 1);    //using this for hail mary straight up 
     }
     else if (time === '30 Minutes'){ 
@@ -549,15 +764,15 @@ function uptrendCalculator(time: string) {
 function downtrendCalculator(time: string) {
     
     if (time === '5 Minutes'){       
-        difference5Min = high5 - low5;
-        ret2FiveMin = (open5+close5)/2; //using this one for up then down
-        ret5FiveMin = low5 + (difference5Min * 0.90); //CUSTOM MADE 
+        difference5Min = open5 - close5;
+        ret2FiveMin = close5 + (difference5Min * 0.382);  //using this one for up then down
+        ret5FiveMin = close5 + (difference5Min * 0.90); //CUSTOM MADE 
         ext5FiveMin = close5 - (difference5Min * 1);    //using this for hail mary straight down 
     }
     else if (time === '15 Minutes'){        
-        difference15Min = high15 - low15;
-        ret2FifteenMin = (open15+close15)/2; //using this one for up then down
-        ret5FifteenMin = low15 + (difference15Min * 0.90); //CUSTOM MADE 
+        difference15Min = open15 - close15;
+        ret2FifteenMin = close15 + (difference15Min * 0.382); //using this one for up then down
+        ret5FifteenMin = close15 + (difference15Min * 0.90); //CUSTOM MADE 
         ext5FifteenMin = close15 - (difference15Min * 1);    //using this for hail mary straight down 
     }
     else if (time === '30 Minutes'){        
@@ -590,10 +805,19 @@ function fiveMinuteTrades(book: LiveOrderbook): Promise<string> {
     
     return new Promise(function (resolve, reject){
         
-        
+    if (fiveMinKeep == true){
+        if (Math.abs(close5 - open5) < 150){
+            fiveMinKeep = false;
+        }
+        else{
+            cancelMinuteOrders(fiveMinuteOrdersKeep, '5 Minutes Keep');
+        }
+    }
     
+    let fiveMinuteAmountToTrade = .001 * fiveMinuteInitialTradeCounter;
+    console.log("THE COUNTER : " + fiveMinuteInitialTradeCounter + "AND AMOUNT: " + fiveMinuteAmountToTrade);
             
-    if ((close5 > open5) && ((close5 - open5) > 10)){ //green bar, price went up
+    if ((close5 > open5) && ((close5 - open5) > 75)){ //green bar, price went up
 
         bigCandle5 = true;
 
@@ -614,17 +838,31 @@ function fiveMinuteTrades(book: LiveOrderbook): Promise<string> {
         pushMessage('INITIAL BUY 5 38.2% ORDER', `Going to submit limit buy at $${ret2FiveMin}`); //buy order need to buy before sell otherwise dont sell
         pushMessage('FOLLOWING SELL 5 38.2% ORDER', `Going to submit limit sell at $${close5}`); //sell order
         
-        submitTrade('buy', '0.001', ret2FiveMin.toFixed(2).toString(), '38.2 5 Minutes');
+        submitTrade('buy', fiveMinuteAmountToTrade.toFixed(3).toString(), ret2FiveMin.toFixed(2).toString(), '38.2 5 Minutes');
         
-        followingOrder38FiveMin = {
-            type: 'placeOrder',
-            time: new Date(),
-            productId: product,
-            orderType: 'limit',
-            side: 'sell',
-            size: '0.001',
-            price: close5.toFixed(2).toString()
-        };
+        if (fiveMinKeep == true){
+            followingOrder38FiveMinKeep = {
+                type: 'placeOrder',
+                time: new Date(),
+                productId: product,
+                orderType: 'limit',
+                side: 'sell',
+                size: fiveMinuteAmountToTrade.toFixed(3).toString(),
+                price: close5.toFixed(2).toString()
+            };
+        }
+        else {
+            followingOrder38FiveMin = {
+                type: 'placeOrder',
+                time: new Date(),
+                productId: product,
+                orderType: 'limit',
+                side: 'sell',
+                size: fiveMinuteAmountToTrade.toFixed(3).toString(),
+                price: close5.toFixed(2).toString()
+            };
+        }
+        
 
 
 
@@ -642,22 +880,22 @@ function fiveMinuteTrades(book: LiveOrderbook): Promise<string> {
         //     size: '0.005',
         //     price: ret5FiveMin.toFixed(2).toString()
         // };
-        submitTrade('buy', '0.001', ret5FiveMin.toFixed(2).toString(), 'Following Order 10.0 5 Minutes');
+        submitTrade('buy', fiveMinuteAmountToTrade.toFixed(3).toString(), ret5FiveMin.toFixed(2).toString(), 'Following Order 10.0 5 Minutes');
 
 
         //this is extension 100% - incase a big jump
         pushMessage('SELL 5 100% ORDER', `Going to submit limit sell at $${ext5FiveMin}`); //if it goes up only
         
-        submitTrade('sell', '0.001', ext5FiveMin.toFixed(2).toString(), '100 5 Minutes');
+        submitTrade('sell', fiveMinuteAmountToTrade.toFixed(3).toString(), ext5FiveMin.toFixed(2).toString(), '100 5 Minutes');
 
 
 
 
 
-        console.log('BUY ORDER 5 38.2', `Going to submit limit buy at $${ret2FiveMin}`); //buy order need to buy before sell otherwise dont sell
-        console.log('SELL ORDER 5 38.2', `Going to submit limit sell at $${close5}`); //sell order
-        console.log('SELL ORDER 5 10.0', `Submitted sell at $${open5+75}`); //if it goes up slightly then goes down
-        console.log('BUY ORDER 5 10.0', `Going to submit limit buy at $${ret5FiveMin}`); //buy
+        console.log('BUY ORDER INITIAL 5 38.2', `Going to submit limit buy at $${ret2FiveMin}`); //buy order need to buy before sell otherwise dont sell
+        console.log('SELL ORDER FOLLOWING 5 38.2', `Going to submit limit sell at $${close5}`); //sell order
+        console.log('SELL ORDER INITIAL 5 10.0', `Submitted sell at $${open5+(fiveMinuteInitialTradeCounter == 1 ? 75: fiveMinuteInitialTradeCounter == 2 ? 100: 150)}`); //if it goes up slightly then goes down
+        console.log('BUY ORDER FOLLOWING 5 10.0', `Going to submit limit buy at $${ret5FiveMin}`); //buy
         console.log('SELL ORDER 5 100', `Going to submit limit sell at $${ext5FiveMin}`); //if it goes up only
 
         initial10Triggered5 = false;
@@ -666,7 +904,7 @@ function fiveMinuteTrades(book: LiveOrderbook): Promise<string> {
         
     }
 
-    else if ((open5 > close5) && ((open5 - close5) > 10)){ //red bar, price went down
+    else if ((open5 > close5) && ((open5 - close5) > 75)){ //red bar, price went down
 
         bigCandle5 = true;
 
@@ -689,17 +927,33 @@ function fiveMinuteTrades(book: LiveOrderbook): Promise<string> {
         pushMessage('INITIAL SELL 5 38.2% ORDER', `Going to submit limit sell at $${ret2FiveMin}`); //sell order need to sell before buy otherwise dont buy
         pushMessage('FOLLOWING BUY 5 38.2% ORDER', `Going to submit limit buy at $${close5}`); //buy order
 
-        submitTrade('sell', '0.001', ret2FiveMin.toFixed(2).toString(), '38.2 5 Minutes');
+        submitTrade('sell', fiveMinuteAmountToTrade.toFixed(3).toString(), ret2FiveMin.toFixed(2).toString(), '38.2 5 Minutes');
         
-        followingOrder38FiveMin = {
-            type: 'placeOrder',
-            time: new Date(),
-            productId: product,
-            orderType: 'limit',
-            side: 'buy',
-            size: '0.001',
-            price: close5.toFixed(2).toString()
-        };
+
+        if (fiveMinKeep == true){
+            followingOrder38FiveMinKeep = {
+                type: 'placeOrder',
+                time: new Date(),
+                productId: product,
+                orderType: 'limit',
+                side: 'buy',
+                size: fiveMinuteAmountToTrade.toFixed(3).toString(),
+                price: close5.toFixed(2).toString()
+            };
+
+        }
+        else {
+            followingOrder38FiveMin = {
+                type: 'placeOrder',
+                time: new Date(),
+                productId: product,
+                orderType: 'limit',
+                side: 'buy',
+                size: fiveMinuteAmountToTrade.toFixed(3).toString(),
+                price: close5.toFixed(2).toString()
+            };
+        }
+        
 
         
 
@@ -718,7 +972,7 @@ function fiveMinuteTrades(book: LiveOrderbook): Promise<string> {
         //     size: '0.005',
         //     price: ret5FiveMin.toFixed(2).toString()
         // };
-        submitTrade('sell', '0.001', ret5FiveMin.toFixed(2).toString(), 'Following Order 10.0 5 Minutes');
+        submitTrade('sell', fiveMinuteAmountToTrade.toFixed(3).toString(), ret5FiveMin.toFixed(2).toString(), 'Following Order 10.0 5 Minutes');
 
 
 
@@ -728,17 +982,17 @@ function fiveMinuteTrades(book: LiveOrderbook): Promise<string> {
         //this is extension 100% - incase a big jump
         pushMessage('BUY 100% ORDER', `Going to submit limit buy at $${ext5FiveMin}`); //if it goes down only
 
-        submitTrade('buy', '0.001', ext5FiveMin.toFixed(2).toString(), '100 5 Minutes');
+        submitTrade('buy', fiveMinuteAmountToTrade.toFixed(3).toString(), ext5FiveMin.toFixed(2).toString(), '100 5 Minutes');
 
 
 
 
 
         //Print Statements 
-        console.log('SELL ORDER 5 38.2', `Going to submit limit sell at $${ret2FiveMin}`); //sell order need to sell before buy otherwise dont buy
-        console.log('BUY ORDER 5 38.2', `Going to submit limit buy at $${close5}`); //buy order
-        console.log('BUY ORDER 5 10.0', `Submitted sell at $${open5-75}`); //if it goes down slightly then goes up
-        console.log('SELL ORDER 5 10.0', `Going to submit limit buy at $${ret5FiveMin}`); //buy     
+        console.log('SELL ORDER INITIAL 5 38.2', `Going to submit limit sell at $${ret2FiveMin}`); //sell order need to sell before buy otherwise dont buy
+        console.log('BUY ORDER FOLLOWING 5 38.2', `Going to submit limit buy at $${close5}`); //buy order
+        console.log('BUY ORDER INITIAL 5 10.0', `Submitted sell at $${open5-(fiveMinuteInitialTradeCounter == 1 ? 75: fiveMinuteInitialTradeCounter == 2 ? 100: 150)}`); //if it goes down slightly then goes up
+        console.log('SELL ORDER FOLLOWING 5 10.0', `Going to submit limit buy at $${ret5FiveMin}`); //buy     
         console.log('BUY ORDER 5 100', `Going to submit limit sell at $${ext5FiveMin}`); //if it goes down only
 
 
@@ -748,47 +1002,47 @@ function fiveMinuteTrades(book: LiveOrderbook): Promise<string> {
     
     }
 
-    if (bigCandle5 == false && initial10ExecutedBool5 == true){
+    if (bigCandle5 == false && initial10ExecutedBool5 == true){ //When an initial order executes but the candle isn't big. Will attempt one trade
         initial10ExecutedBool5 = false;
         if (initial10TradeSide5 === 'buy'){
-            submitTrade('sell', '0.001', open5.toFixed(2).toString(), 'Following Order 10.0 5 Minutes');
+            submitTrade('sell', fiveMinuteAmountToTrade.toFixed(3).toString(), open5.toFixed(2).toString(), 'Following Order 10.0 5 Minutes');
         }
         else if (initial10TradeSide5 === 'sell'){
-            submitTrade('buy', '0.001', open5.toFixed(2).toString(), 'Following Order 10.0 5 Minutes');
+            submitTrade('buy', fiveMinuteAmountToTrade.toFixed(3).toString(), open5.toFixed(2).toString(), 'Following Order 10.0 5 Minutes');
         }
     }
 
     
     
-    if (bigCandle5 == false){
+    if (bigCandle5 == false){  //When the candle isn't big. Need to clear out initial orders
         for (let i: number = 0; i < initialOrder10FiveMin.length; i++){
             gdaxAPI.cancelOrder(initialOrder10FiveMin[i]).then((res: string) => {
                 if (fiveMinuteOrders.includes(initialOrder10FiveMin[i])){
                     fiveMinuteOrders.splice(fiveMinuteOrders.indexOf(initialOrder10FiveMin[i]), 1);
                 }
                 if (i == initialOrder10FiveMin.length-1){
-                    initial10Triggered5 = false;
-                    initialOrder10FiveMin = [];
-                    initial10ExecutedBool5 = false;
+                    initial10Triggered5 = false;  //allows initial order to execute
+                    initialOrder10FiveMin = [];     //clearing out array just incase
+                    initial10ExecutedBool5 = false; //resetting to false just incase
                 }
                
             });
         }
     }
     else{
-        initialOrder10FiveMin = [];
-        initial10ExecutedBool5 = false;
+        initialOrder10FiveMin = []; //clearing out array just incase
+        initial10ExecutedBool5 = false; //resetting to false for next initial orders
     }
 
-    global5MinuteCounter = Date.now();
-    open5Boolean = false;
-    bigCandle5 = false;
+    global5MinuteCounter = Date.now(); //resetting timer
+    open5Boolean = false;  //allows open of candle to be inputted
+    bigCandle5 = false; //setting big candle to false for next set of orders
 
     pushMessage('Price Trigger', `OPEN 5 MINS: ${open5} \n HIGH 5 MINS: ${high5} \n LOW 5 MINS: ${low5} \n CLOSE 5 MINS: ${close5}`);
     console.log('Price Trigger', `OPEN 5 MINS: ${open5} \n HIGH 5 MINS: ${high5} \n LOW 5 MINS: ${low5} \n CLOSE 5 MINS: ${close5}`);
 
-    high5 = 0;
-    low5 = 99999;
+    high5 = 0; //resetting high for next candle
+    low5 = 99999; //resetting low for next candle
 
     resolve("5 MINUTES GOOD"); //if the action succeeded
     reject("5 MINTUES ERROR"); //if the action did not succeed
@@ -796,10 +1050,23 @@ function fiveMinuteTrades(book: LiveOrderbook): Promise<string> {
             
 }
 
-function fifteenMinuteTrades(book: LiveOrderbook) {
+function fifteenMinuteTrades(book: LiveOrderbook): Promise<string> {
     
-            
-    if ((close15 > open15) && ((close15 - open15) > 15)){ //green bar, price went up
+    return new Promise(function (resolve, reject){
+
+    if (fifteenMinKeep == true){
+        if (Math.abs(close15 - open15) < 200){
+            fifteenMinKeep = false;
+        }
+        else{
+            cancelMinuteOrders(fifteenMinuteOrdersKeep, '15 Minutes Keep');
+        }
+    }
+    
+    let fifteenMinuteAmountToTrade = .001 * fifteenMinuteInitialTradeCounter;
+    console.log("THE COUNTER : " + fifteenMinuteInitialTradeCounter + "AND AMOUNT: " + fifteenMinuteAmountToTrade);
+
+    if ((close15 > open15) && ((close15 - open15) > 100)){ //green bar, price went up
 
         
         bigCandle15 = true;
@@ -821,17 +1088,32 @@ function fifteenMinuteTrades(book: LiveOrderbook) {
         pushMessage('INITIAL BUY 15 38.2% ORDER', `Going to submit limit buy at $${ret2FifteenMin}`); //buy order need to buy before sell otherwise dont sell
         pushMessage('FOLLOWING SELL 15 38.2% ORDER', `Going to submit limit sell at $${close15}`); //sell order
         
-        submitTrade('buy', '0.001', ret2FifteenMin.toFixed(2).toString(), '38.2 15 Minutes');
+        submitTrade('buy', fifteenMinuteAmountToTrade.toFixed(3).toString(), ret2FifteenMin.toFixed(2).toString(), '38.2 15 Minutes');
         
-        followingOrder38FifteenMin = {
-            type: 'placeOrder',
-            time: new Date(),
-            productId: product,
-            orderType: 'limit',
-            side: 'sell',
-            size: '0.001',
-            price: close15.toFixed(2).toString()
-        };
+        
+        if (fifteenMinKeep == true){
+            followingOrder38FifteenMinKeep = {
+                type: 'placeOrder',
+                time: new Date(),
+                productId: product,
+                orderType: 'limit',
+                side: 'sell',
+                size: fifteenMinuteAmountToTrade.toFixed(3).toString(),
+                price: close15.toFixed(2).toString()
+            };
+        }
+        else {
+            followingOrder38FifteenMin = {
+                type: 'placeOrder',
+                time: new Date(),
+                productId: product,
+                orderType: 'limit',
+                side: 'sell',
+                size: fifteenMinuteAmountToTrade.toFixed(3).toString(),
+                price: close15.toFixed(2).toString()
+            };
+        }
+        
 
 
 
@@ -848,22 +1130,22 @@ function fifteenMinuteTrades(book: LiveOrderbook) {
         //     size: '0.005',
         //     price: ret5FifteenMin.toFixed(2).toString()
         // };
-        submitTrade('buy', '0.001', ret5FifteenMin.toFixed(2).toString(), 'Following Order 10.0 15 Minutes');
+        submitTrade('buy', fifteenMinuteAmountToTrade.toFixed(3).toString(), ret5FifteenMin.toFixed(2).toString(), 'Following Order 10.0 15 Minutes');
 
 
         //this is extension 100% - incase a big jump
         pushMessage('SELL 15 100% ORDER', `Going to submit limit sell at $${ext5FifteenMin}`); //if it goes up only
         
-        submitTrade('sell', '0.001', ext5FifteenMin.toFixed(2).toString(), '100 15 Minutes');
+        submitTrade('sell', fifteenMinuteAmountToTrade.toFixed(3).toString(), ext5FifteenMin.toFixed(2).toString(), '100 15 Minutes');
 
 
 
 
 
-        console.log('BUY ORDER 15 38.2', `Going to submit limit buy at $${ret2FifteenMin}`); 
-        console.log('SELL ORDER 15 38.2', `Going to submit limit sell at $${close15}`); 
-        console.log('SELL ORDER 15 10.0', `Submitted sell at $${open15+100}`); 
-        console.log('BUY ORDER 15 10.0', `Going to submit limit buy at $${ret5FifteenMin}`); //buy
+        console.log('BUY ORDER INITIAL 15 38.2', `Going to submit limit buy at $${ret2FifteenMin}`); 
+        console.log('SELL ORDER FOLLOWING 15 38.2', `Going to submit limit sell at $${close15}`); 
+        console.log('SELL ORDER INITIAL 15 10.0', `Submitted sell at $${open15+(fifteenMinuteInitialTradeCounter == 1 ? 100: fifteenMinuteInitialTradeCounter == 2 ? 125: 150)}`); 
+        console.log('BUY ORDER FOLLOWING 15 10.0', `Going to submit limit buy at $${ret5FifteenMin}`); //buy
         console.log('SELL ORDER 15 100', `Going to submit limit sell at $${ext5FifteenMin}`); //if it goes up only
 
         initial10Triggered15 = false;
@@ -872,7 +1154,7 @@ function fifteenMinuteTrades(book: LiveOrderbook) {
         
     }
 
-    else if ((open15 > close15) && ((open15 - close15) > 15)){ //red bar, price went down
+    else if ((open15 > close15) && ((open15 - close15) > 100)){ //red bar, price went down
 
 
         bigCandle15 = true;
@@ -895,17 +1177,31 @@ function fifteenMinuteTrades(book: LiveOrderbook) {
         pushMessage('INITIAL SELL 15 38.2% ORDER', `Going to submit limit sell at $${ret2FifteenMin}`); //sell order need to sell before buy otherwise dont buy
         pushMessage('FOLLOWING BUY 15 38.2% ORDER', `Going to submit limit buy at $${close15}`); //buy order
 
-        submitTrade('sell', '0.001', ret2FifteenMin.toFixed(2).toString(), '38.2 15 Minutes');
+        submitTrade('sell', fifteenMinuteAmountToTrade.toFixed(3).toString(), ret2FifteenMin.toFixed(2).toString(), '38.2 15 Minutes');
         
-        followingOrder38FifteenMin = {
-            type: 'placeOrder',
-            time: new Date(),
-            productId: product,
-            orderType: 'limit',
-            side: 'buy',
-            size: '0.001',
-            price: close15.toFixed(2).toString()
-        };
+        if (fifteenMinKeep == true){
+            followingOrder38FifteenMinKeep = {
+                type: 'placeOrder',
+                time: new Date(),
+                productId: product,
+                orderType: 'limit',
+                side: 'buy',
+                size: fifteenMinuteAmountToTrade.toFixed(3).toString(),
+                price: close15.toFixed(2).toString()
+            };
+        }
+        else {
+            followingOrder38FifteenMin = {
+                type: 'placeOrder',
+                time: new Date(),
+                productId: product,
+                orderType: 'limit',
+                side: 'buy',
+                size: fifteenMinuteAmountToTrade.toFixed(3).toString(),
+                price: close15.toFixed(2).toString()
+            };
+        }
+        
 
 
 
@@ -922,25 +1218,25 @@ function fifteenMinuteTrades(book: LiveOrderbook) {
         //     size: '0.005',
         //     price: ret5FifteenMin.toFixed(2).toString()
         // };
-        submitTrade('sell', '0.001', ret5FifteenMin.toFixed(2).toString(), 'Following Order 10.0 15 Minutes');
+        submitTrade('sell', fifteenMinuteAmountToTrade.toFixed(3).toString(), ret5FifteenMin.toFixed(2).toString(), 'Following Order 10.0 15 Minutes');
 
 
 
         //this is extension 100% - incase a big jump
         pushMessage('BUY 15 100% ORDER', `Going to submit limit buy at $${ext5FifteenMin}`); //if it goes down only
 
-        submitTrade('buy', '0.001', ext5FifteenMin.toFixed(2).toString(), '100 15 Minutes');
+        submitTrade('buy', fifteenMinuteAmountToTrade.toFixed(3).toString(), ext5FifteenMin.toFixed(2).toString(), '100 15 Minutes');
 
 
 
 
 
         //Print Statements 
-        console.log('SELL ORDER 38.2', `Going to submit limit sell at $${ret2FifteenMin}`); //sell order need to sell before buy otherwise dont buy
-        console.log('BUY ORDER 38.2', `Going to submit limit buy at $${close15}`); //buy order
-        console.log('BUY ORDER 10.0', `Submitted sell at $${open15-100}`); //if it goes down slightly then goes up
-        console.log('SELL ORDER 10.0', `Going to submit limit buy at $${ret5FifteenMin}`); //buy     
-        console.log('BUY ORDER 100', `Going to submit limit sell at $${ext5FifteenMin}`); //if it goes down only
+        console.log('SELL ORDER INITIAL 15 38.2', `Going to submit limit sell at $${ret2FifteenMin}`); //sell order need to sell before buy otherwise dont buy
+        console.log('BUY ORDER FOLLOWING 15 38.2', `Going to submit limit buy at $${close15}`); //buy order
+        console.log('BUY ORDER INITIAL 15 10.0', `Submitted sell at $${open15-(fifteenMinuteInitialTradeCounter == 1 ? 100: fifteenMinuteInitialTradeCounter == 2 ? 125: 150)}`); //if it goes down slightly then goes up
+        console.log('SELL ORDER FOLLOWING 15 10.0', `Going to submit limit buy at $${ret5FifteenMin}`); //buy     
+        console.log('BUY ORDER 15 100', `Going to submit limit sell at $${ext5FifteenMin}`); //if it goes down only
 
         initial10Triggered15 = false;
 
@@ -952,10 +1248,10 @@ function fifteenMinuteTrades(book: LiveOrderbook) {
     if (bigCandle15 == false && initial10ExecutedBool15 == true){
         initial10ExecutedBool15 = false;
         if (initial10TradeSide15 === 'buy'){
-            submitTrade('sell', '0.001', open15.toFixed(2).toString(), 'Following Order 10.0 15 Minutes');
+            submitTrade('sell', fifteenMinuteAmountToTrade.toFixed(3).toString(), open15.toFixed(2).toString(), 'Following Order 10.0 15 Minutes');
         }
         else if (initial10TradeSide15 === 'sell'){
-            submitTrade('buy', '0.001', open15.toFixed(2).toString(), 'Following Order 10.0 15 Minutes');
+            submitTrade('buy', fifteenMinuteAmountToTrade.toFixed(3).toString(), open15.toFixed(2).toString(), 'Following Order 10.0 15 Minutes');
         }
     }
 
@@ -994,7 +1290,9 @@ function fifteenMinuteTrades(book: LiveOrderbook) {
     high15 = 0;
     low15 = 99999;
     
-    
+    resolve("15 MINUTES GOOD"); //if the action succeeded
+    reject("15 MINTUES ERROR"); //if the action did not succeed
+    });
 
 }
 
@@ -1004,16 +1302,21 @@ function cancelMinuteOrders(minuteOrders: Array<string>, time: string): Promise<
 
     return new Promise(function (resolve, reject){
 
-    console.log("MINUTE: " + time + "ADN LENGTH: " +  minuteOrders.length);
+    console.log("MINUTE: " + time + "AND LENGTH: " +  minuteOrders.length);
     for (let l = 0; l < minuteOrders.length; l++){
         gdaxAPI.cancelOrder(minuteOrders[l]).then((res: string) => {
             if (l == minuteOrders.length-1 && time === '5 Minutes'){
                 fiveMinuteOrders = [];
-                // resolve("Resolved 5 minute cancel orders");
             }
             else if (l == minuteOrders.length-1 && time === '15 Minutes'){
                 fifteenMinuteOrders = [];
-                // resolve("Resolved 15 minute cancel minute orders");
+               
+            }
+            else if (l == minuteOrders.length-1 && time === '5 Minutes Keep'){
+                fiveMinuteOrdersKeep = [];
+            }
+            else if (l == minuteOrders.length-1 && time === '15 Minutes Keep'){
+                fifteenMinuteOrdersKeep = [];
             }
         });
     }
