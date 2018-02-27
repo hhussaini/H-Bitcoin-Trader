@@ -1078,12 +1078,11 @@ function fiveMinuteTrades(book: LiveOrderbook): Promise<string> {
     
     
     if (bigCandle5 == false){  //When the candle isn't big. Need to clear out initial orders
-        console.log("MINUTE 5: AND LENGTH: " +  fiveMinuteOrders.length);
         for (let i: number = 0; i < initialOrder10FiveMin.length; i++){
-            if (fiveMinuteOrders.includes(initialOrder10FiveMin[i])){
-                fiveMinuteOrders.splice(fiveMinuteOrders.indexOf(initialOrder10FiveMin[i]), 1);
-            }
             gdaxAPI.cancelOrder(initialOrder10FiveMin[i]).then((res: string) => {
+                if (fiveMinuteOrders.includes(initialOrder10FiveMin[i])){
+                    fiveMinuteOrders.splice(fiveMinuteOrders.indexOf(initialOrder10FiveMin[i]), 1);
+                }
                 if (i == initialOrder10FiveMin.length-1){
                     initial10Triggered5 = false;  //allows initial order to execute
                     initialOrder10FiveMin = [];     //clearing out array just incase
@@ -1314,10 +1313,10 @@ function fifteenMinuteTrades(book: LiveOrderbook): Promise<string> {
     
     if (bigCandle15 == false){
         for (let i: number = 0; i < initialOrder10FifteenMin.length; i++){
-            if (fifteenMinuteOrders.includes(initialOrder10FifteenMin[i])){
-                fifteenMinuteOrders.splice(fifteenMinuteOrders.indexOf(initialOrder10FifteenMin[i]), 1);
-            }
             gdaxAPI.cancelOrder(initialOrder10FifteenMin[i]).then((res: string) => {
+                if (fifteenMinuteOrders.includes(initialOrder10FifteenMin[i])){
+                    fifteenMinuteOrders.splice(fifteenMinuteOrders.indexOf(initialOrder10FifteenMin[i]), 1);
+                }
                 if (i == initialOrder10FifteenMin.length-1){
                     initial10Triggered15 = false;
                     initialOrder10FifteenMin = [];
