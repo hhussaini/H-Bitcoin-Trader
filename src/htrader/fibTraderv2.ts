@@ -272,7 +272,11 @@ GTT.Factories.GDAX.FeedFactory(logger, [product]).then((feed: GDAXFeed) => {
 
         if (msg.type === 'tradeExecuted'){
             
+            
+
             tradeExecuted = msg as TradeExecutedMessage;
+
+            console.log("TRADE EXECUTED MESSAGE RECEIVED TO " + tradeExecuted.side + " AMOUNT " + tradeExecuted.tradeSize + " AT PRICE " + tradeExecuted.price);
 
             if (fiveMinuteOrders.includes(tradeExecuted.orderId)){
                 fiveMinuteOrders.splice(fiveMinuteOrders.indexOf(tradeExecuted.orderId), 1);
@@ -307,7 +311,7 @@ GTT.Factories.GDAX.FeedFactory(logger, [product]).then((feed: GDAXFeed) => {
                     fiveMinKeep = true;
                 }
                 fiveMinuteInitialTradeCounter++;
-                console.log("COUNTER" + fiveMinuteInitialTradeCounter);
+                console.log("COUNTER 5:" + fiveMinuteInitialTradeCounter);
             }
             if (initialOrder38FiveMinKeep != null){
                 if (tradeExecuted.orderId == initialOrder38FiveMinKeep.id){
@@ -340,6 +344,7 @@ GTT.Factories.GDAX.FeedFactory(logger, [product]).then((feed: GDAXFeed) => {
                     fifteenMinKeep = true;
                 }
                 fifteenMinuteInitialTradeCounter++;
+                console.log("COUNTER 15:" + fifteenMinuteInitialTradeCounter);
             }
             if (initialOrder38FifteenMinKeep != null){
                 if (tradeExecuted.orderId == initialOrder38FifteenMinKeep.id){
@@ -538,7 +543,7 @@ function checkBook(book: LiveOrderbook){
             gdaxAPI.loadHistoricRates(options).then((res: Array<Array<string>>) => {
                 //console.log(res);               
                 //console.log("LEN: " + res.length); will always be 350(max) currently
-                let numArray = new Array(31).fill(0);
+                let numArray = new Array(20).fill(0);
                 let average = 0;
                 let averageCounter = 0;
                 for (let i = 0; i < 121; i++){ //hardcoded for 10 hours. 12 * amount of hours to look at 
@@ -553,7 +558,7 @@ function checkBook(book: LiveOrderbook){
                             let tens = Math.floor((Math.abs(open - close)/10) % 10);
                             numArray[tens]++;
                         }
-                        else if (Math.abs(open - close) >= 100){
+                        else if (Math.abs(open - close) >= 100 && Math.abs(open - close) < 200){
                             let hundreds = Math.floor((Math.abs(open - close)/10));
                             numArray[hundreds]++;
                         }
@@ -581,20 +586,20 @@ function checkBook(book: LiveOrderbook){
 
                 let buy10Five: number = open5 - (candleAverage5Minutes-10);
                 let sell10Five: number = open5 + (candleAverage5Minutes-10);
-                submitTrade('buy', '0.001', buy10Five.toFixed(2).toString(), '10.0 5 Minutes');
-                submitTrade('sell', '0.001', sell10Five.toFixed(2).toString(), '10.0 5 Minutes');
+                submitTrade('buy', '0.002', buy10Five.toFixed(2).toString(), '10.0 5 Minutes');
+                submitTrade('sell', '0.002', sell10Five.toFixed(2).toString(), '10.0 5 Minutes');
                 buy10Five = open5 - candleAverage5Minutes;
                 sell10Five = open5 + candleAverage5Minutes;
-                submitTrade('buy', '0.001', buy10Five.toFixed(2).toString(), '10.0 5 Minutes');
-                submitTrade('sell', '0.001', sell10Five.toFixed(2).toString(), '10.0 5 Minutes');
+                submitTrade('buy', '0.002', buy10Five.toFixed(2).toString(), '10.0 5 Minutes');
+                submitTrade('sell', '0.002', sell10Five.toFixed(2).toString(), '10.0 5 Minutes');
                 buy10Five = open5 - (candleAverage5Minutes+10);
                 sell10Five = open5 + (candleAverage5Minutes+10);
-                submitTrade('buy', '0.001', buy10Five.toFixed(2).toString(), '10.0 5 Minutes');
-                submitTrade('sell', '0.001', sell10Five.toFixed(2).toString(), '10.0 5 Minutes');
+                submitTrade('buy', '0.002', buy10Five.toFixed(2).toString(), '10.0 5 Minutes');
+                submitTrade('sell', '0.002', sell10Five.toFixed(2).toString(), '10.0 5 Minutes');
                 buy10Five = open5 - (candleAverage5Minutes+25);
                 sell10Five = open5 + (candleAverage5Minutes+25);
-                submitTrade('buy', '0.001', buy10Five.toFixed(2).toString(), '10.0 5 Minutes Keep');
-                submitTrade('sell', '0.001', sell10Five.toFixed(2).toString(), '10.0 5 Minutes Keep');
+                submitTrade('buy', '0.002', buy10Five.toFixed(2).toString(), '10.0 5 Minutes Keep');
+                submitTrade('sell', '0.002', sell10Five.toFixed(2).toString(), '10.0 5 Minutes Keep');
                 
             });
 
@@ -673,20 +678,20 @@ function checkBook(book: LiveOrderbook){
 
                 let buy10Fifteen: number = open15 - (candleAverage15Minutes-15);
                 let sell10Fifteen: number = open15 + (candleAverage15Minutes-15);
-                submitTrade('buy', '0.001', buy10Fifteen.toFixed(2).toString(), '10.0 15 Minutes');
-                submitTrade('sell', '0.001', sell10Fifteen.toFixed(2).toString(), '10.0 15 Minutes');
+                submitTrade('buy', '0.002', buy10Fifteen.toFixed(2).toString(), '10.0 15 Minutes');
+                submitTrade('sell', '0.002', sell10Fifteen.toFixed(2).toString(), '10.0 15 Minutes');
                 buy10Fifteen = open15 - candleAverage15Minutes;
                 sell10Fifteen = open15 + candleAverage15Minutes;
-                submitTrade('buy', '0.001', buy10Fifteen.toFixed(2).toString(), '10.0 15 Minutes');
-                submitTrade('sell', '0.001', sell10Fifteen.toFixed(2).toString(), '10.0 15 Minutes');
+                submitTrade('buy', '0.002', buy10Fifteen.toFixed(2).toString(), '10.0 15 Minutes');
+                submitTrade('sell', '0.002', sell10Fifteen.toFixed(2).toString(), '10.0 15 Minutes');
                 buy10Fifteen = open15 - (candleAverage15Minutes+15);
                 sell10Fifteen = open15 + (candleAverage15Minutes+15);
-                submitTrade('buy', '0.001', buy10Fifteen.toFixed(2).toString(), '10.0 15 Minutes');
-                submitTrade('sell', '0.001', sell10Fifteen.toFixed(2).toString(), '10.0 15 Minutes');
+                submitTrade('buy', '0.002', buy10Fifteen.toFixed(2).toString(), '10.0 15 Minutes');
+                submitTrade('sell', '0.002', sell10Fifteen.toFixed(2).toString(), '10.0 15 Minutes');
                 buy10Fifteen = open15 - (candleAverage15Minutes+30);
                 sell10Fifteen = open15 + (candleAverage15Minutes+30);
-                submitTrade('buy', '0.001', buy10Fifteen.toFixed(2).toString(), '10.0 15 Minutes Keep');
-                submitTrade('sell', '0.001', sell10Fifteen.toFixed(2).toString(), '10.0 15 Minutes Keep');
+                submitTrade('buy', '0.002', buy10Fifteen.toFixed(2).toString(), '10.0 15 Minutes Keep');
+                submitTrade('sell', '0.002', sell10Fifteen.toFixed(2).toString(), '10.0 15 Minutes Keep');
 
                
                 
@@ -757,14 +762,13 @@ function checkBook(book: LiveOrderbook){
 
         fiveMinuteTrades(book).then((result: string) => {
             console.log("RESULT OF FIVE MIN TRADES: " + result); 
-            
         }).then(function() {
             return promiseTimeout(2000);
         }).then(function() {
-            if (Date.now() - global15MinuteCounter > 900000){
+            if (Date.now() - global15MinuteCounter > 890000){
                 fifteenMinuteTrades(book).then((result: string) => {
                     console.log("RESULT OF FIFTEEN MIN TRADES: " + result);
-                      
+                    fifteenMinuteInitialTradeCounter = 0;
                 });
             } 
             console.log("MADE IT BEFORE 15 WITH NO ERRORS");
@@ -773,7 +777,7 @@ function checkBook(book: LiveOrderbook){
         }).then(function() {
             console.log("MADE IT AFTER 15 WITH NO ERRORS");
             fiveMinuteInitialTradeCounter = 0;
-            fifteenMinuteInitialTradeCounter = 0;  
+              
         });
 
         
@@ -890,11 +894,13 @@ function fiveMinuteTrades(book: LiveOrderbook): Promise<string> {
             fiveMinKeep = false;
         }
         else{
-            cancelMinuteOrders(fiveMinuteOrdersKeep, '5 Minutes Keep');
+            cancelMinuteOrders(fiveMinuteOrdersKeep, '5 Minutes Keep').then((result: string) => {
+                console.log("5 MIN KEEP CANCEL RESULT: " + result);
+            });
         }
     }
     
-    let fiveMinuteAmountToTrade = .001 * fiveMinuteInitialTradeCounter;
+    let fiveMinuteAmountToTrade = .002 * fiveMinuteInitialTradeCounter;
     console.log("THE COUNTER : " + fiveMinuteInitialTradeCounter + "AND AMOUNT: " + fiveMinuteAmountToTrade);
             
     if ((close5 > open5) && ((close5 - open5) > (candleAverage5Minutes-10))){ //green bar, price went up
@@ -1054,8 +1060,8 @@ function fiveMinuteTrades(book: LiveOrderbook): Promise<string> {
         console.log('SELL ORDER INITIAL 5 38.2', `Going to submit limit sell at $${ret2FiveMin}`); //sell order need to sell before buy otherwise dont buy
         console.log('BUY ORDER FOLLOWING 5 38.2', `Going to submit limit buy at $${close5}`); //buy order
         console.log('BUY ORDER INITIAL 5 10.0', `Submitted max buy at $${open5-(fiveMinuteInitialTradeCounter == 1 ? (candleAverage5Minutes-10): fiveMinuteInitialTradeCounter == 2 ? candleAverage5Minutes: fiveMinuteInitialTradeCounter == 3 ? (candleAverage5Minutes+10): (candleAverage5Minutes+25))}`); //if it goes down slightly then goes up
-        console.log('SELL ORDER FOLLOWING 5 10.0', `Going to submit limit buy at $${ret5FiveMin}`); //buy     
-        console.log('BUY ORDER 5 100', `Going to submit limit sell at $${ext5FiveMin}`); //if it goes down only
+        console.log('SELL ORDER FOLLOWING 5 10.0', `Going to submit limit sell at $${ret5FiveMin}`); //buy     
+        console.log('BUY ORDER 5 100', `Going to submit limit buy at $${ext5FiveMin}`); //if it goes down only
 
 
         initial10Triggered5 = false;
@@ -1079,6 +1085,12 @@ function fiveMinuteTrades(book: LiveOrderbook): Promise<string> {
     
     if (bigCandle5 == false){  //When the candle isn't big. Need to clear out initial orders
         console.log("MINUTE 5: AND LENGTH: " +  fiveMinuteOrders.length);
+        console.log("MINUTE 5: AND INITIAL ORDER LENGTH: " +  initialOrder10FiveMin.length);
+        console.log("MINUTE 5: AND INITIAL ORDER 0: " +  initialOrder10FiveMin[0]);
+        console.log("MINUTE 5: AND INITIAL ORDER 1: " +  initialOrder10FiveMin[1]);
+        console.log("MINUTE 5: AND INITIAL ORDER 2: " +  initialOrder10FiveMin[2]);
+        console.log("MINUTE 5: AND INITIAL ORDER 3: " +  initialOrder10FiveMin[3]);
+        console.log("MINUTE 5: AND INITIAL ORDER 4: " +  initialOrder10FiveMin[4]);
         for (let i: number = 0; i < initialOrder10FiveMin.length; i++){
             if (fiveMinuteOrders.includes(initialOrder10FiveMin[i])){
                 fiveMinuteOrders.splice(fiveMinuteOrders.indexOf(initialOrder10FiveMin[i]), 1);
@@ -1128,11 +1140,13 @@ function fifteenMinuteTrades(book: LiveOrderbook): Promise<string> {
             fifteenMinKeep = false;
         }
         else{
-            cancelMinuteOrders(fifteenMinuteOrdersKeep, '15 Minutes Keep');
+            cancelMinuteOrders(fifteenMinuteOrdersKeep, '15 Minutes Keep').then((result: string) => {
+                console.log("15 MIN KEEP CANCEL RESULT: " + result);
+            });
         }
     }
     
-    let fifteenMinuteAmountToTrade = .001 * fifteenMinuteInitialTradeCounter;
+    let fifteenMinuteAmountToTrade = .002 * fifteenMinuteInitialTradeCounter;
     console.log("THE COUNTER : " + fifteenMinuteInitialTradeCounter + "AND AMOUNT: " + fifteenMinuteAmountToTrade);
 
     if ((close15 > open15) && ((close15 - open15) > (candleAverage15Minutes-15))){ //green bar, price went up
@@ -1313,6 +1327,13 @@ function fifteenMinuteTrades(book: LiveOrderbook): Promise<string> {
     
     
     if (bigCandle15 == false){
+        console.log("MINUTE 15: AND LENGTH: " +  fifteenMinuteOrders.length);
+        console.log("MINUTE 15: AND INITIAL ORDER LENGTH: " +  initialOrder10FifteenMin.length);
+        console.log("MINUTE 15: AND INITIAL ORDER 0: " +  initialOrder10FifteenMin[0]);
+        console.log("MINUTE 15: AND INITIAL ORDER 1: " +  initialOrder10FifteenMin[1]);
+        console.log("MINUTE 15: AND INITIAL ORDER 2: " +  initialOrder10FifteenMin[2]);
+        console.log("MINUTE 15: AND INITIAL ORDER 3: " +  initialOrder10FifteenMin[3]);
+        console.log("MINUTE 15: AND INITIAL ORDER 4: " +  initialOrder10FifteenMin[4]);
         for (let i: number = 0; i < initialOrder10FifteenMin.length; i++){
             if (fifteenMinuteOrders.includes(initialOrder10FifteenMin[i])){
                 fifteenMinuteOrders.splice(fifteenMinuteOrders.indexOf(initialOrder10FifteenMin[i]), 1);

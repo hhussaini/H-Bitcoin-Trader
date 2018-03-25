@@ -52,6 +52,7 @@
     "ccxt": "^1.6.72",
     "commander": "2.9.0",
     "crypto": "0.0.3",
+    "express": "4.16.3",
     "gdax": "0.3.1",
     "gdax-trading-toolkit": "^0.1.16",
     "limiter": "git://github.com/jhurliman/node-rate-limiter.git#58ce2fda6b5c2bc4ccb81ba3768c5b1bc06c91a5",

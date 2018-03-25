@@ -5,5 +5,5 @@ The primary purpose of this is to allow the GTT to communicate with GTT-ui compo
 
 ## Usage
 
-    $ ts-node server/server-cli -p 3222
+    $ ts-node server/server-cli -p 3220
 
