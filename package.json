@@ -15,7 +15,7 @@
     "clean": "rm -fr build coverage .nyc_output",
     "doc": "./node_modules/.bin/typedoc --options typedoc.json .",
     "prepublishOnly": "yarn run build",
-    "start": "ts-node src/fibServer.ts"
+    "start": "ts-node src/fibServerv2.ts"
   },
   "bin": {
     "gdaxConsole": "./build/src/consoles/gdaxConsole.js"

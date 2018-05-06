@@ -5,7 +5,7 @@ var io = require('socket.io')(http);
 var port = process.env.PORT || 3220;
 
 app.get('/', function(req: any, res: any){
-  res.sendFile(__dirname + '/indexTest.html');
+  res.sendFile(__dirname + '/clientIndex.html');
 });
 
 const connections: any = [];
