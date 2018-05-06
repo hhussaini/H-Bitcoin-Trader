@@ -203,6 +203,17 @@ let fifteenMinuteInitialTradeCounter: number = 0;
 let candleAverage5Minutes: number = 0;
 let candleAverage15Minutes: number = 0;
 
+
+
+const io = require('socket.io-client');
+const socket = io.connect('http://localhost:3220');
+
+socket.on('Stop Program', function (data: any) {
+    console.log(data);
+    process.exit();
+});
+
+
 GTT.Factories.GDAX.FeedFactory(logger, [product]).then((feed: GDAXFeed) => {
 // Configure the live book object
 
@@ -575,6 +586,7 @@ function checkBook(book: LiveOrderbook){
                 
                 for (let j = 0; j < numArray.length; j++){
                     //console.log("FILLED ARRAY: VAL: " + j*10 + " AND AMOUNT: " + numArray[j]);
+                    //send("FILLED ARRAY: VAL: " + j*10 + " AND AMOUNT: " + numArray[j]);
                     if (numArray[j] > 0){
                         newAverageTotal += (numArray[j] * (j*10));
                         newCounter += numArray[j];
@@ -583,7 +595,6 @@ function checkBook(book: LiveOrderbook){
 
                 candleAverage5Minutes = newAverageTotal/newCounter;
                 console.log("NEW AVERAGE: " + newAverageTotal/newCounter);
-
                 let buy10Five: number = open5 - (candleAverage5Minutes-10);
                 let sell10Five: number = open5 + (candleAverage5Minutes-10);
                 submitTrade('buy', '0.002', buy10Five.toFixed(2).toString(), '10.0 5 Minutes');

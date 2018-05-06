@@ -14,7 +14,8 @@
     "test": "yarn run lint && yarn run test:mocha",
     "clean": "rm -fr build coverage .nyc_output",
     "doc": "./node_modules/.bin/typedoc --options typedoc.json .",
-    "prepublishOnly": "yarn run build"
+    "prepublishOnly": "yarn run build",
+    "start": "ts-node src/fibServer.ts"
   },
   "bin": {
     "gdaxConsole": "./build/src/consoles/gdaxConsole.js"
@@ -60,6 +61,7 @@
     "pushbullet": "2.0.0",
     "querystring": "0.2.0",
     "simple-mock": "0.8.0",
+    "socket.io": "2.1.0",
     "superagent": "3.0.0",
     "winston": "2.3.0",
     "ws": "1.1.1"
