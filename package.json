@@ -4,6 +4,9 @@
   "description": "A trading toolkit for building advanced trading bots on the GDAX platform",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
+  "engines": {
+    "node": "8.11.1"
+  },
   "scripts": {
     "lint": "tslint -c tslint.json -p . -t stylish",
     "pretest": "yarn run build",
