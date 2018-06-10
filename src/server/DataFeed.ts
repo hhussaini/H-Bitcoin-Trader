@@ -81,7 +81,6 @@ class DataFeed {
 
         socket.on('message', (data: any) => {
             try {
-                console.log("CLIENT CONNECTION WORKED: " + data);
                 const msg = JSON.parse(data);
                 this.handleIncomingCommand(msg);
             } catch (err) {
