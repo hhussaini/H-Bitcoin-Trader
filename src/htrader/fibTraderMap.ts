@@ -171,20 +171,39 @@ let netAmountBtcTraded5Minutes: number = 0; //VERY IMPORTANT, POSITIVE IS BUYING
 
 //Each key returns this object containing 4 items
 type KeyOrders = {followingOrder10 : string, initialOrder38 : LiveOrder, followingOrder38Order : PlaceOrderMessage, followingOrder38Id: string};
-let keyOrders: KeyOrders = {
-    followingOrder10: "",  //the following Order10. If this is hit BEFORE followingOrder38Id, cancel followingOrder38Id
-    initialOrder38: null, //initial Order 38 which will control following Order38
-    followingOrder38Order: null, //following Order 38 PlaceOrderMessage, after the order is placed we get the ID
-    followingOrder38Id: "" //ID after placng order, incase we want to cancel later
-};
+
+
 
 //VERY IMPORTANT, MAP OF ALL ORDERS, Key is the ID of the latest initial10Order
 let ordersMap: Map<string, KeyOrders> = new Map<string, KeyOrders>();
 
 let finalInitialOrder10: string = ""; //Key which is used for ordersMap
 
+let thisFollowingOrder10: string = "";  //the following Order10. If this is hit BEFORE followingOrder38Id, cancel followingOrder38Id
+let thisInitialOrder38: LiveOrder = null; //initial Order 38 which will control following Order38
+let thisFollowingOrder38Order: PlaceOrderMessage = null; //following Order 38 PlaceOrderMessage, after the order is placed we get the ID
+//let thisFollowingOrder38Id: string = ""; //ID after placng order, incase we want to cancel later
+
+let minimum3Hours: number = 99999; //minimum candle close amount in last 3 hours
+let maximum3Hours: number = 0; //maximum candle close amount in last 3 hours
+
+let mysql = require('mysql');
+
+let con = mysql.createConnection({
+  host: "localhost",
+  user: "root",
+  password: "romper",
+  database: "test_bitcoinapp"
+});
+
+
+
+
+
 const io = require('socket.io-client');
 const socket = io.connect('https://powerful-dawn-77023.herokuapp.com/');
+
+
 
 socket.on('Stop Program', function (data: any) {
     console.log(data);
@@ -363,13 +382,16 @@ function submitTrade(side: string, amount: string, price: string, percentAndMin:
         else if (percentAndMin === '38.2 5 Minutes'){
           
             initialOrder38FiveMin = result;
-            keyOrders.initialOrder38 = result;
+            thisInitialOrder38 = result;
+           
             
         }
       
         else if (percentAndMin === 'Following Order 10.0 5 Minutes'){
             followingOrder10FiveMin = result;
-            keyOrders.followingOrder10 = result.id;
+            thisFollowingOrder10 = result.id;
+          
+           
         }
 
        
@@ -444,7 +466,9 @@ function checkBook(book: LiveOrderbook){
             // console.log("end " + isoEnd);
 
             let options = {
-                granularity: '300'
+                granularity: '300',
+                start: '2018-06-29T04:00:00.000Z',
+                end:   '2018-06-30T04:00:00.000Z'
             };
             gdaxAPI.loadHistoricRates(options).then((res: Array<Array<string>>) => {
                 //console.log(res);               
@@ -452,9 +476,21 @@ function checkBook(book: LiveOrderbook){
                 let numArray = new Array(20).fill(0);
                 let average = 0;
                 let averageCounter = 0;
-                for (let i = 0; i < 121; i++){ //hardcoded for 10 hours. (120*5)/60  
+                let average2 = 0;
+                let averageCounter2 = 0;
+                for (let i = 0; i < 288; i++){ //hardcoded for 10 hours. (120*5)/60  
                     let open = Number(res[i][3]);
                     let close = Number(res[i][4]);
+                    con.connect(function(err: any) {
+                     
+                        console.log("Connected!");
+                        let sql = "INSERT INTO testdata (TimeOfDay, Low, High, OpenValue, CloseValue, Volume) VALUES ?";
+                        let valueArray = [[Number(res[i][0]), Number(res[i][1]), Number(res[i][2]), Number(res[i][3]), Number(res[i][4]), Number(res[i][5])]];
+                        con.query(sql, [valueArray], function (err: any, result: any) {
+                            if (err) throw err;
+                            console.log("Did it:" + i );
+                          });
+                      });
                     //console.log("VAL: " + Math.abs(open - close));
                     if (Math.abs(open - close) > 10){    //everything above 10 because 5 minute candles arent so big
                         average += Math.abs(open - close);
@@ -470,8 +506,23 @@ function checkBook(book: LiveOrderbook){
                         }
 
                     }
+                    if (i <= 36){
+                        if (close > maximum3Hours){
+                            maximum3Hours = close;
+                        }
+                        if (close < minimum3Hours){
+                            minimum3Hours = close;
+                        }
+                        average2 += (open+close)/2;
+                        averageCounter2++;
+                    }
+
                   
                 }
+                console.log("MINIMUM: " + minimum3Hours);
+                console.log("MAXIMUM: " + maximum3Hours);
+                console.log("AVERAGE PRICE: " + average2/averageCounter2);
+
                 let finalAverage = average/averageCounter;
                 console.log("FINAL AVERAGE: " + finalAverage);
                
@@ -493,26 +544,26 @@ function checkBook(book: LiveOrderbook){
                 
                 
                 
-                let buy10Five: number = open5 - (candleAverage5Minutes-5);
-                submitTrade('buy', '0.002', buy10Five.toFixed(2).toString(), '10.0 5 Minutes');
-                buy10Five = open5 - (candleAverage5Minutes);
-                submitTrade('buy', '0.002', buy10Five.toFixed(2).toString(), '10.0 5 Minutes');
-                buy10Five = open5 - (candleAverage5Minutes+5);
-                submitTrade('buy', '0.002', buy10Five.toFixed(2).toString(), '10.0 5 Minutes');
-                buy10Five = open5 - (candleAverage5Minutes+10);
-                submitTrade('buy', '0.002', buy10Five.toFixed(2).toString(), '10.0 5 Minutes');
+                // let buy10Five: number = open5 - (candleAverage5Minutes-5);
+                // submitTrade('buy', '0.002', buy10Five.toFixed(2).toString(), '10.0 5 Minutes');
+                // buy10Five = open5 - (candleAverage5Minutes);
+                // submitTrade('buy', '0.002', buy10Five.toFixed(2).toString(), '10.0 5 Minutes');
+                // buy10Five = open5 - (candleAverage5Minutes+5);
+                // submitTrade('buy', '0.002', buy10Five.toFixed(2).toString(), '10.0 5 Minutes');
+                // buy10Five = open5 - (candleAverage5Minutes+10);
+                // submitTrade('buy', '0.002', buy10Five.toFixed(2).toString(), '10.0 5 Minutes');
             
             
 
             
-                let sell10Five: number = open5 + (candleAverage5Minutes-5);
-                submitTrade('sell', '0.002', sell10Five.toFixed(2).toString(), '10.0 5 Minutes');              
-                sell10Five = open5 + (candleAverage5Minutes);
-                submitTrade('sell', '0.002', sell10Five.toFixed(2).toString(), '10.0 5 Minutes');
-                sell10Five = open5 + (candleAverage5Minutes+5);
-                submitTrade('sell', '0.002', sell10Five.toFixed(2).toString(), '10.0 5 Minutes');
-                sell10Five = open5 + (candleAverage5Minutes+10);
-                submitTrade('sell', '0.002', sell10Five.toFixed(2).toString(), '10.0 5 Minutes');
+                // let sell10Five: number = open5 + (candleAverage5Minutes-5);
+                // submitTrade('sell', '0.002', sell10Five.toFixed(2).toString(), '10.0 5 Minutes');              
+                // sell10Five = open5 + (candleAverage5Minutes);
+                // submitTrade('sell', '0.002', sell10Five.toFixed(2).toString(), '10.0 5 Minutes');
+                // sell10Five = open5 + (candleAverage5Minutes+5);
+                // submitTrade('sell', '0.002', sell10Five.toFixed(2).toString(), '10.0 5 Minutes');
+                // sell10Five = open5 + (candleAverage5Minutes+10);
+                // submitTrade('sell', '0.002', sell10Five.toFixed(2).toString(), '10.0 5 Minutes');
                 
                 
             });
@@ -550,28 +601,33 @@ function checkBook(book: LiveOrderbook){
         //         //setTimeout(function(){ fifteenMinuteTrades(book) },10000);
         //     }    
         // });
-
+       
         fiveMinuteTrades(book).then((result: string) => {
             console.log("RESULT OF FIVE MIN TRADES: " + result);
-            if (finalInitialOrder10.length > 0){
-                console.log("KEY ORDERS: " + keyOrders);
+        }).then(function() {
+            return promiseTimeout(5000);
+        }).then(function() {
+            return promiseTimeout(5000);
+        }).then(function() {
+            console.log("MADE IT AFTER 5 WITH NO ERRORS");
+            if (finalInitialOrder10){
+                let keyOrders: KeyOrders = {
+                    followingOrder10: thisFollowingOrder10,  
+                    initialOrder38: thisInitialOrder38, 
+                    followingOrder38Order: thisFollowingOrder38Order, 
+                    followingOrder38Id: "" 
+                };
                 ordersMap.set(finalInitialOrder10, keyOrders);
                 for (let [key, value] of ordersMap) {
                     console.log("MAP VALS: " + key, value);
                 }
             }
-        }).then(function() {
-            return promiseTimeout(2000);
-        }).then(function() {
-            return promiseTimeout(2000);
-        }).then(function() {
-            console.log("MADE IT AFTER 5 WITH NO ERRORS");
             fiveMinuteInitialTradeCounter = 0;
-            finalInitialOrder10 = ""; 
-            keyOrders.followingOrder10 = "";
-            keyOrders.initialOrder38 = null;
-            keyOrders.followingOrder38Order = null;
-            keyOrders.followingOrder38Id = "";
+            finalInitialOrder10 = "";
+            thisFollowingOrder10 = "";
+            thisFollowingOrder38Order = null;
+            thisInitialOrder38 = null;
+            
             for (let [key, value] of ordersMap) {
                 console.log("MAP VALS: " + key, value);
             }
@@ -691,7 +747,7 @@ function fiveMinuteTrades(book: LiveOrderbook): Promise<string> {
         };
         
         
-        keyOrders.followingOrder38Order = followingOrder38FiveMin;
+        thisFollowingOrder38Order = followingOrder38FiveMin;
 
 
 
@@ -754,8 +810,7 @@ function fiveMinuteTrades(book: LiveOrderbook): Promise<string> {
         };
     
     
-        keyOrders.followingOrder38Order = followingOrder38FiveMin;
-        
+        thisFollowingOrder38Order = followingOrder38FiveMin;
 
 
        
@@ -789,13 +844,13 @@ function fiveMinuteTrades(book: LiveOrderbook): Promise<string> {
         initial10ExecutedBool5 = false;
         let smallCandleAmountToTrade5: number = fiveMinuteAmountToTrade*2;
         if (initial10TradeSide5 === 'buy'){
-            let sellValue5: number = close5 + 1;
+            let sellValue5: number = close5 + 2;
             console.log("sellValue5 on small candle: " + sellValue5 + " and amount to trade: " + smallCandleAmountToTrade5);
             submitTrade('sell', smallCandleAmountToTrade5.toFixed(3).toString(), sellValue5.toFixed(2).toString(), 'Following Order 10.0 5 Minutes');
             
         }
         else if (initial10TradeSide5 === 'sell'){
-            let buyValue5: number = close5 - 1;
+            let buyValue5: number = close5 - 2;
             console.log("buyValue5 on small candle: " + buyValue5 + " and amount to trade: " + smallCandleAmountToTrade5);
             submitTrade('buy', smallCandleAmountToTrade5.toFixed(3).toString(), buyValue5.toFixed(2).toString(), 'Following Order 10.0 5 Minutes');
            
@@ -805,12 +860,7 @@ function fiveMinuteTrades(book: LiveOrderbook): Promise<string> {
     
     
     
-        console.log("MINUTE 5: AND INITIAL ORDER LENGTH: " +  initialOrder10FiveMin.length);
-        console.log("MINUTE 5: AND INITIAL ORDER 0: " +  initialOrder10FiveMin[0]);
-        console.log("MINUTE 5: AND INITIAL ORDER 1: " +  initialOrder10FiveMin[1]);
-        console.log("MINUTE 5: AND INITIAL ORDER 2: " +  initialOrder10FiveMin[2]);
-        console.log("MINUTE 5: AND INITIAL ORDER 3: " +  initialOrder10FiveMin[3]);
-        console.log("MINUTE 5: AND INITIAL ORDER 4: " +  initialOrder10FiveMin[4]);
+
         for (let i: number = 0; i < initialOrder10FiveMin.length; i++){
             gdaxAPI.cancelOrder(initialOrder10FiveMin[i]).then((res: string) => {
                 if (i == initialOrder10FiveMin.length-1){
